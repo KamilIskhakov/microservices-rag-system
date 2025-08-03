@@ -1,0 +1,111 @@
+/* Стили для кнопки проверки экстремистского контента */
+.extremist-check-button {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 8px 0;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 9999;
+  position: relative;
+}
+
+.extremist-check-button:hover {
+  background: linear-gradient(135deg, #ee5a5a, #dd4b4b);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+  transform: translateY(-1px);
+}
+
+.extremist-check-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
+}
+
+.extremist-check-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Контейнер для результата */
+.extremist-check-result {
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  position: relative;
+  max-width: 600px;
+}
+
+.extremist-check-result.loading {
+  border-color: #4285f4;
+  background: #f8f9fa;
+  color: #666;
+}
+
+.extremist-check-result.safe {
+  border-color: #fbbc05;
+  background: #fffbf0;
+  color: #8b5a00;
+}
+
+.extremist-check-result.warning {
+  border-color: #fbbc05;
+  background: #fffbf0;
+  color: #8b5a00;
+}
+
+.extremist-check-result.danger {
+  border-color: #ea4335;
+  background: #fff5f5;
+  color: #8b0000;
+}
+
+/* Специфичные стили для Google */
+.extremist-check-container-google {
+  margin: 10px 0;
+  width: 100%;
+}
+
+/* Специфичные стили для Яндекс */
+.extremist-check-container-yandex {
+  margin: 10px 0;
+  width: 100%;
+}
+
+/* Анимация загрузки */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #666;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Иконка щита */
+.shield-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}

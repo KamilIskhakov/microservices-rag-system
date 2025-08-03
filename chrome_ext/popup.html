@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Проверка экстремизма</title>
+  <style>
+    body {
+      width: 400px;
+      min-height: 300px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      background: #f8f9fa;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      color: #333;
+      font-size: 20px;
+      margin: 0 0 8px 0;
+    }
+    
+    .header p {
+      color: #666;
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .input-section {
+      margin-bottom: 20px;
+    }
+    
+    .input-section label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    #query {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    
+    #query:focus {
+      outline: none;
+      border-color: #4285f4;
+    }
+    
+    #checkBtn {
+      width: 100%;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    #checkBtn:hover {
+      background: linear-gradient(135deg, #ee5a5a, #dd4b4b);
+      transform: translateY(-1px);
+    }
+    
+    #checkBtn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    #result {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+      min-height: 60px;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    
+    #result.loading {
+      border-color: #4285f4;
+      background: #f8f9fa;
+      color: #666;
+    }
+    
+    #result.safe {
+      border-color: #34a853;
+      background: #f0fff4;
+      color: #2d5a2d;
+    }
+    
+    #result.warning {
+      border-color: #fbbc05;
+      background: #fffbf0;
+      color: #8b5a00;
+    }
+    
+    #result.danger {
+      border-color: #ea4335;
+      background: #fff5f5;
+      color: #8b0000;
+    }
+    
+    .instructions {
+      background: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: #1565c0;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #666;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🛡️ Проверка экстремизма</h1>
+    <p>Проверка материалов в реестре Минюста РФ</p>
+  </div>
+  
+  <div class="input-section">
+    <label for="query">Введите текст для проверки:</label>
+    <textarea id="query" placeholder="Введите название книги, статьи, видео или любой другой материал, который нужно проверить на предмет включения в реестр экстремистских материалов..."></textarea>
+  </div>
+  
+  <button id="checkBtn">🔍 Проверить</button>
+  
+  <div id="result">Введите запрос и нажмите "Проверить"</div>
+  
+  <div class="instructions">
+    💡 <strong>Совет:</strong> Это расширение также работает прямо на страницах поисковых систем (Google, Яндекс). Просто введите запрос в поисковую строку и нажмите кнопку "Проверить на экстремизм" под строкой поиска.
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.cpu
+    container_name: rag_backend_cpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    environment:
+      # Stripe-переменные временно отключены
+      # - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      # - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - QWEN_MODEL_PATH=/app/models/qwen-model
+      - FAISS_INDEX_PATH=/app/data/index.faiss
+      - FAISS_META_PATH=/app/data/index.faiss.meta
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 
