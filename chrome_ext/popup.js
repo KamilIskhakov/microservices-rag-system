@@ -9,6 +9,7 @@ class ExtremistCheckerPopup {
     this.usageText = document.getElementById('usageText');
     this.usageFill = document.getElementById('usageFill');
     this.upgradeBtn = document.getElementById('upgradeBtn');
+    this.premiumBtn = document.getElementById('premiumBtn');
     
     // Инициализируем сервисы
     this.limitsService = new LimitsService();
@@ -27,6 +28,7 @@ class ExtremistCheckerPopup {
     // Добавляем обработчики событий
     this.checkButton.addEventListener('click', () => this.checkContent());
     this.upgradeBtn.addEventListener('click', () => this.showUpgradeModal());
+    this.premiumBtn.addEventListener('click', () => this.showUpgradeModal());
     
     // Проверяем при нажатии Enter в текстовом поле
     this.queryInput.addEventListener('keypress', (e) => {

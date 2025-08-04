@@ -212,6 +212,31 @@
       font-size: 10px;
       font-weight: 500;
     }
+    
+    .premium-section {
+      margin-top: 16px;
+      text-align: center;
+    }
+    
+    .premium-btn {
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    }
+    
+    .premium-btn:hover {
+      background: linear-gradient(135deg, #ffed4e, #ffd700);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -237,6 +262,10 @@
   <button id="checkBtn">🔍 Проверить</button>
   
   <div id="result">Введите запрос и нажмите "Проверить"</div>
+  
+  <div class="premium-section">
+    <button id="premiumBtn" class="premium-btn">💎 Премиум подписка</button>
+  </div>
   
   <div class="instructions">
     💡 <strong>Совет:</strong> Это расширение также работает прямо на страницах поисковых систем (Google, Яндекс). Просто введите запрос в поисковую строку и нажмите кнопку "Проверить на экстремизм" под строкой поиска.
