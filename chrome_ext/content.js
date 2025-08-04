@@ -1,10 +1,13 @@
 class ExtremistContentChecker {
   constructor() {
-    this.apiUrl = 'http://localhost:8000/check';
+    this.apiUrl = 'https://api.extremist-checker.com/check';
     this.isChecking = false;
     this.lastQuery = '';
     this.resultContainer = null;
     this.checkButton = null;
+    
+    // Инициализируем сервис лимитов
+    this.limitsService = new LimitsService();
     
     this.init();
   }
@@ -139,6 +142,13 @@ class ExtremistContentChecker {
       return;
     }
 
+    // Проверяем лимиты
+    const canMakeRequest = await this.limitsService.canMakeRequest();
+    if (!canMakeRequest) {
+      this.showUpgradePrompt();
+      return;
+    }
+
     this.isChecking = true;
     this.lastQuery = query;
     
@@ -170,13 +180,30 @@ class ExtremistContentChecker {
 
       const data = await response.json();
       this.displayResult(data);
+      
+      // Увеличиваем счетчик использованных запросов
+      await this.limitsService.incrementUsage();
 
     } catch (error) {
       console.error('Ошибка при проверке:', error);
-      this.showResult(
-        'Ошибка подключения к сервису проверки. Убедитесь, что сервер запущен на localhost:8000', 
-        'danger'
-      );
+      
+      let errorMessage = 'Ошибка подключения к сервису проверки.\n\n';
+      
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage += 'Возможные причины:\n';
+        errorMessage += '• Проблемы с интернет-соединением\n';
+        errorMessage += '• Сервис временно недоступен\n';
+        errorMessage += '• Блокировка со стороны провайдера\n\n';
+        errorMessage += 'Попробуйте позже или обратитесь в поддержку.';
+      } else if (error.message.includes('429')) {
+        errorMessage += 'Превышен лимит запросов. Попробуйте через несколько минут.';
+      } else if (error.message.includes('500')) {
+        errorMessage += 'Внутренняя ошибка сервера. Попробуйте позже.';
+      } else {
+        errorMessage += `Детали ошибки: ${error.message}`;
+      }
+      
+      this.showResult(errorMessage, 'danger');
     } finally {
       this.isChecking = false;
       this.checkButton.disabled = false;
@@ -222,7 +249,19 @@ class ExtremistContentChecker {
   hideResult() {
     this.resultContainer.style.display = 'none';
   }
+
+  // Показать промпт для апгрейда
+  showUpgradePrompt() {
+    this.showResult(
+      'Достигнут дневной лимит бесплатных проверок (20).\n\n' +
+      '💎 Откройте расширение для перехода на Премиум с неограниченными проверками!',
+      'warning'
+    );
+  }
 }
+
+// Инициализируем расширение
+new ExtremistContentChecker();
 
 // Инициализируем расширение
 new ExtremistContentChecker();

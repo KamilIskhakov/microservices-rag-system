@@ -88,3 +88,15 @@ fine_tuned_model_lora/
 *.temp
 temp/
 tmp/
+
+# Chrome extension build files
+chrome_ext/build/
+chrome_ext/dist/
+chrome_ext/*.zip
+chrome_ext/*.crx
+
+# Payment keys (security)
+**/payment_keys/
+**/yookassa_keys/
+*.key
+*.pem

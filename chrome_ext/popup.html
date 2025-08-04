@@ -145,12 +145,88 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    
+    /* Стили для лимитов и премиум */
+    .limits-info {
+      margin-top: 12px;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .usage-bar {
+      width: 100%;
+      height: 6px;
+      background: #e9ecef;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    
+    .usage-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #28a745, #20c997);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .usage-fill.warning {
+      background: linear-gradient(90deg, #ffc107, #fd7e14);
+    }
+    
+    .usage-fill.danger {
+      background: linear-gradient(90deg, #dc3545, #e83e8c);
+    }
+    
+    .usage-text {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #6c757d;
+    }
+    
+    .upgrade-btn {
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      color: #333;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .upgrade-btn:hover {
+      background: linear-gradient(135deg, #ffed4e, #ffd700);
+      transform: translateY(-1px);
+    }
+    
+    .premium-badge {
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      color: #333;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>🛡️ Проверка экстремизма</h1>
     <p>Проверка материалов в реестре Минюста РФ</p>
+    <div id="limitsInfo" class="limits-info">
+      <div class="usage-bar">
+        <div class="usage-fill" id="usageFill"></div>
+      </div>
+      <div class="usage-text">
+        <span id="usageText">Загрузка...</span>
+        <button id="upgradeBtn" class="upgrade-btn" style="display: none;">💎 Премиум</button>
+      </div>
+    </div>
   </div>
   
   <div class="input-section">
@@ -166,6 +242,8 @@
     💡 <strong>Совет:</strong> Это расширение также работает прямо на страницах поисковых систем (Google, Яндекс). Просто введите запрос в поисковую строку и нажмите кнопку "Проверить на экстремизм" под строкой поиска.
   </div>
 
+  <script src="services/limits.js"></script>
+  <script src="services/payment.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

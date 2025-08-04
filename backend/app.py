@@ -1,7 +1,10 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from api.check import router as check_router
+from api.update import router as update_router
 from services.rag_service import RAGService
+from services.database_updater import DatabaseUpdater
+from services.scheduler import TaskScheduler
 from services.logger import logger
 from config import settings
 from middleware.security import security_middleware
@@ -15,8 +18,14 @@ app = FastAPI(
     openapi_url=None
 )
 
-# Глобальный экземпляр RAG сервиса
+# Подключаем роутеры
+app.include_router(check_router, prefix="/api/v1")
+app.include_router(update_router, prefix="/api/v1")
+
+# Глобальные экземпляры сервисов
 rag_service: RAGService = None
+database_updater: DatabaseUpdater = None
+scheduler: TaskScheduler = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,7 +45,7 @@ async def add_security_headers(request: Request, call_next):
 @app.on_event("startup")
 async def startup_event():
     """Инициализация при запуске сервера"""
-    global rag_service
+    global rag_service, database_updater, scheduler
     
     logger.info("Starting up Extremist Material Checker API...")
     
@@ -46,6 +55,16 @@ async def startup_event():
         
         # Проверяем базу данных
         await check_database()
+        
+        # Инициализируем обновлятель БД
+        database_updater = DatabaseUpdater(rag_service)
+        
+        # Инициализируем планировщик задач
+        scheduler = TaskScheduler()
+        scheduler.add_database_update_task(database_updater, interval_hours=24)
+        
+        # Запускаем планировщик в фоновом режиме
+        asyncio.create_task(scheduler.start())
         
         logger.info("API startup completed successfully")
         
@@ -81,13 +100,21 @@ async def check_database():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Очистка при выключении сервера"""
-    global rag_service
+    global rag_service, scheduler
     
     logger.info("Shutting down Extremist Material Checker API...")
     
+    # Останавливаем планировщик
+    if scheduler:
+        await scheduler.stop()
+        logger.info("Scheduler stopped")
+    
+    # Очищаем RAG сервис
     if rag_service:
         rag_service.cleanup()
-        logger.info("Cleanup completed")
+        logger.info("RAG service cleanup completed")
+    
+    logger.info("Cleanup completed")
 
 @app.options("/check")
 async def check_options_global(request: Request, response: Response):
