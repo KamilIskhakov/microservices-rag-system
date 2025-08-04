@@ -23,6 +23,8 @@ class ExtremistContentChecker {
     console.log('Настройка интерфейса');
     this.detectSearchEngine();
     this.createCheckButton();
+    this.createPreSearchButton();
+    this.createPremiumButton();
     this.createResultContainer();
     this.attachEventListeners();
   }
@@ -81,6 +83,29 @@ class ExtremistContentChecker {
     this.checkButton.addEventListener('click', () => this.checkContent());
   }
 
+  createPreSearchButton() {
+    this.preSearchButton = document.createElement('button');
+    this.preSearchButton.className = 'extremist-pre-search-button';
+    this.preSearchButton.innerHTML = `
+      <svg class="shield-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.1 16,12.7V16.2C16,16.8 15.4,17.3 14.8,17.3H9.2C8.6,17.3 8,16.8 8,16.2V12.8C8,12.2 8.6,11.7 9.2,11.7V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,9.5V11.5H13.5V9.5C13.5,8.7 12.8,8.2 12,8.2Z"/>
+      </svg>
+      Проверить ДО поиска
+    `;
+    
+    this.preSearchButton.addEventListener('click', () => this.checkPreSearch());
+  }
+
+  createPremiumButton() {
+    this.premiumButton = document.createElement('button');
+    this.premiumButton.className = 'extremist-premium-button';
+    this.premiumButton.innerHTML = `
+      💎 Премиум
+    `;
+    
+    this.premiumButton.addEventListener('click', () => this.showPremiumModal());
+  }
+
   createResultContainer() {
     this.resultContainer = document.createElement('div');
     this.resultContainer.className = 'extremist-check-result';
@@ -90,6 +115,44 @@ class ExtremistContentChecker {
   insertElements() {
     console.log('Попытка вставки элементов для поисковика:', this.searchEngine);
     
+    // Проверяем, не вставлены ли уже кнопки
+    if (document.querySelector('.extremist-check-button')) {
+      console.log('Кнопки уже существуют, пропускаем вставку');
+      return;
+    }
+    
+    // Вставляем кнопку ДО поисковой строки
+    this.insertPreSearchButton();
+    
+    // Вставляем кнопку премиум
+    this.insertPremiumButton();
+    
+    // Вставляем основную кнопку и результаты
+    this.insertMainButton();
+  }
+
+  insertPreSearchButton() {
+    const searchInput = document.querySelector(this.searchInputSelector);
+    if (searchInput) {
+      const searchForm = searchInput.closest('form');
+      if (searchForm) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'extremist-pre-search-container';
+        buttonContainer.appendChild(this.preSearchButton);
+        buttonContainer.appendChild(this.premiumButton);
+        
+        // Вставляем после поисковой строки
+        searchForm.appendChild(buttonContainer);
+        console.log('Кнопки ДО поиска вставлены');
+      }
+    }
+  }
+
+  insertPremiumButton() {
+    // Кнопка премиум уже вставлена в insertPreSearchButton
+  }
+
+  insertMainButton() {
     const insertionElement = document.querySelector(this.insertionPoint);
     console.log('Найден элемент вставки:', insertionElement);
     
@@ -106,32 +169,32 @@ class ExtremistContentChecker {
         console.log('Google search div:', searchDiv);
         if (searchDiv) {
           searchDiv.insertBefore(container, searchDiv.firstChild);
-          console.log('Кнопка вставлена в Google');
+          console.log('Основная кнопка вставлена в Google');
         }
       } else if (this.searchEngine === 'yandex') {
         const contentLeft = document.querySelector('.content__left');
         console.log('Yandex content left:', contentLeft);
         if (contentLeft) {
           contentLeft.insertBefore(container, contentLeft.firstChild);
-          console.log('Кнопка вставлена в Yandex');
+          console.log('Основная кнопка вставлена в Yandex');
         }
       } else if (this.searchEngine === 'bing') {
         const bingResults = document.querySelector('#b_results');
         console.log('Bing results:', bingResults);
         if (bingResults) {
           bingResults.insertBefore(container, bingResults.firstChild);
-          console.log('Кнопка вставлена в Bing');
+          console.log('Основная кнопка вставлена в Bing');
         }
       } else if (this.searchEngine === 'duckduckgo') {
         const ddgResults = document.querySelector('#links');
         console.log('DuckDuckGo results:', ddgResults);
         if (ddgResults) {
           ddgResults.insertBefore(container, ddgResults.firstChild);
-          console.log('Кнопка вставлена в DuckDuckGo');
+          console.log('Основная кнопка вставлена в DuckDuckGo');
         }
       } else {
         insertionElement.insertBefore(container, insertionElement.firstChild);
-        console.log('Кнопка вставлена в общий элемент');
+        console.log('Основная кнопка вставлена в общий элемент');
       }
     } else {
       console.log('Элемент вставки не найден для:', this.insertionPoint);
@@ -292,6 +355,114 @@ class ExtremistContentChecker {
       '💎 Откройте расширение для перехода на Премиум с неограниченными проверками!',
       'warning'
     );
+  }
+
+  checkPreSearch() {
+    const searchInput = document.querySelector(this.searchInputSelector);
+    if (searchInput) {
+      const query = searchInput.value.trim();
+      if (query) {
+        this.checkContent();
+      } else {
+        this.showResult('Введите текст в поисковую строку для проверки', 'warning');
+      }
+    } else {
+      this.showResult('Поисковая строка не найдена', 'warning');
+    }
+  }
+
+  showPremiumModal() {
+    const modal = document.createElement('div');
+    modal.className = 'extremist-premium-modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>💎 Премиум подписка</h2>
+          <button class="close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="pricing-card">
+            <h3>299 ₽/месяц</h3>
+            <ul>
+              <li>✅ Неограниченное количество проверок</li>
+              <li>✅ Приоритетная поддержка</li>
+              <li>✅ Без рекламы</li>
+            </ul>
+            <button class="upgrade-btn-large" onclick="this.parentElement.parentElement.parentElement.remove(); window.open('https://extremist-checker.com/premium', '_blank')">
+              💳 Купить премиум
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Добавляем стили для модального окна
+    const style = document.createElement('style');
+    style.textContent = `
+      .extremist-premium-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+      .pricing-card {
+        text-align: center;
+      }
+      .pricing-card h3 {
+        color: #333;
+        margin-bottom: 15px;
+      }
+      .pricing-card ul {
+        text-align: left;
+        margin: 15px 0;
+        padding-left: 20px;
+      }
+      .upgrade-btn-large {
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        color: #333;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+      .upgrade-btn-large:hover {
+        background: linear-gradient(135deg, #ffed4e, #ffd700);
+        transform: translateY(-1px);
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(modal);
   }
 }
 
