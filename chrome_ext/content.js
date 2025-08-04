@@ -6,13 +6,11 @@ class ExtremistContentChecker {
     this.resultContainer = null;
     this.checkButton = null;
     
-    // Инициализируем сервис лимитов
-    this.limitsService = new LimitsService();
-    
     this.init();
   }
 
   init() {
+    console.log('Инициализация ExtremistContentChecker');
     // Ждем, пока страница полностью загрузится
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setupInterface());
@@ -22,6 +20,7 @@ class ExtremistContentChecker {
   }
 
   setupInterface() {
+    console.log('Настройка интерфейса');
     this.detectSearchEngine();
     this.createCheckButton();
     this.createResultContainer();
@@ -30,27 +29,37 @@ class ExtremistContentChecker {
 
   detectSearchEngine() {
     const hostname = window.location.hostname;
+    console.log('Определение поисковика для:', hostname);
     
     if (hostname.includes('google.com')) {
       this.searchEngine = 'google';
       this.searchInputSelector = 'input[name="q"]';
       this.searchFormSelector = 'form[role="search"]';
       this.insertionPoint = '#search';
+      console.log('Определен Google');
     } else if (hostname.includes('yandex.ru')) {
       this.searchEngine = 'yandex';
       this.searchInputSelector = 'input[name="text"]';
       this.searchFormSelector = '.search2__form';
       this.insertionPoint = '.content__left';
+      console.log('Определен Yandex');
     } else if (hostname.includes('bing.com')) {
       this.searchEngine = 'bing';
       this.searchInputSelector = 'input[name="q"]';
       this.searchFormSelector = '#sb_form';
       this.insertionPoint = '#b_results';
+      console.log('Определен Bing');
     } else if (hostname.includes('duckduckgo.com')) {
       this.searchEngine = 'duckduckgo';
       this.searchInputSelector = 'input[name="q"]';
       this.searchFormSelector = '#search_form';
       this.insertionPoint = '#links';
+      console.log('Определен DuckDuckGo');
+    } else {
+      console.log('Поисковик не определен, используем общие селекторы');
+      this.searchEngine = 'unknown';
+      this.searchInputSelector = 'input[type="search"], input[name="q"], input[name="text"]';
+      this.insertionPoint = 'body';
     }
   }
 
@@ -79,7 +88,10 @@ class ExtremistContentChecker {
   }
 
   insertElements() {
+    console.log('Попытка вставки элементов для поисковика:', this.searchEngine);
+    
     const insertionElement = document.querySelector(this.insertionPoint);
+    console.log('Найден элемент вставки:', insertionElement);
     
     if (insertionElement) {
       const container = document.createElement('div');
@@ -91,17 +103,38 @@ class ExtremistContentChecker {
       // Вставляем перед результатами поиска
       if (this.searchEngine === 'google') {
         const searchDiv = document.querySelector('#search');
-        if (searchDiv && searchDiv.firstChild) {
+        console.log('Google search div:', searchDiv);
+        if (searchDiv) {
           searchDiv.insertBefore(container, searchDiv.firstChild);
+          console.log('Кнопка вставлена в Google');
         }
       } else if (this.searchEngine === 'yandex') {
         const contentLeft = document.querySelector('.content__left');
-        if (contentLeft && contentLeft.firstChild) {
+        console.log('Yandex content left:', contentLeft);
+        if (contentLeft) {
           contentLeft.insertBefore(container, contentLeft.firstChild);
+          console.log('Кнопка вставлена в Yandex');
+        }
+      } else if (this.searchEngine === 'bing') {
+        const bingResults = document.querySelector('#b_results');
+        console.log('Bing results:', bingResults);
+        if (bingResults) {
+          bingResults.insertBefore(container, bingResults.firstChild);
+          console.log('Кнопка вставлена в Bing');
+        }
+      } else if (this.searchEngine === 'duckduckgo') {
+        const ddgResults = document.querySelector('#links');
+        console.log('DuckDuckGo results:', ddgResults);
+        if (ddgResults) {
+          ddgResults.insertBefore(container, ddgResults.firstChild);
+          console.log('Кнопка вставлена в DuckDuckGo');
         }
       } else {
         insertionElement.insertBefore(container, insertionElement.firstChild);
+        console.log('Кнопка вставлена в общий элемент');
       }
+    } else {
+      console.log('Элемент вставки не найден для:', this.insertionPoint);
     }
   }
 
@@ -126,8 +159,10 @@ class ExtremistContentChecker {
       subtree: true
     });
 
-    // Вставляем элементы при первом запуске
-    setTimeout(() => this.insertElements(), 1000);
+    // Вставляем элементы при первом запуске с несколькими попытками
+    setTimeout(() => this.insertElements(), 500);
+    setTimeout(() => this.insertElements(), 1500);
+    setTimeout(() => this.insertElements(), 3000);
   }
 
   async checkContent() {
@@ -142,12 +177,12 @@ class ExtremistContentChecker {
       return;
     }
 
-    // Проверяем лимиты
-    const canMakeRequest = await this.limitsService.canMakeRequest();
-    if (!canMakeRequest) {
-      this.showUpgradePrompt();
-      return;
-    }
+    // Проверяем лимиты (временно отключено для тестирования)
+    // const canMakeRequest = await this.limitsService.canMakeRequest();
+    // if (!canMakeRequest) {
+    //   this.showUpgradePrompt();
+    //   return;
+    // }
 
     this.isChecking = true;
     this.lastQuery = query;
@@ -181,8 +216,8 @@ class ExtremistContentChecker {
       const data = await response.json();
       this.displayResult(data);
       
-      // Увеличиваем счетчик использованных запросов
-      await this.limitsService.incrementUsage();
+      // Увеличиваем счетчик использованных запросов (временно отключено)
+      // await this.limitsService.incrementUsage();
 
     } catch (error) {
       console.error('Ошибка при проверке:', error);
