@@ -63,8 +63,57 @@ install_basic_packages() {
         fail2ban \
         ufw \
         htop \
-        unzip
+        unzip \
+        redis-server
     log_success "Базовые пакеты установлены"
+}
+
+# Настройка Redis
+setup_redis() {
+    log_info "Настройка Redis..."
+    
+    # Останавливаем Redis для настройки
+    sudo systemctl stop redis-server
+    
+    # Настраиваем Redis для кэширования
+    sudo tee /etc/redis/redis.conf << EOF
+# Основные настройки
+bind 127.0.0.1
+port 6379
+timeout 300
+tcp-keepalive 60
+
+# Настройки памяти
+maxmemory 2gb
+maxmemory-policy allkeys-lru
+
+# Настройки производительности
+save 900 1
+save 300 10
+save 60 10000
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+
+# Настройки логирования
+loglevel notice
+logfile /var/log/redis/redis-server.log
+
+# Настройки безопасности
+protected-mode yes
+EOF
+    
+    # Запускаем Redis
+    sudo systemctl start redis-server
+    sudo systemctl enable redis-server
+    
+    # Проверяем статус
+    if systemctl is-active --quiet redis-server; then
+        log_success "Redis настроен и запущен"
+    else
+        log_error "Ошибка запуска Redis!"
+        sudo systemctl status redis-server
+    fi
 }
 
 # Настройка безопасности
@@ -232,8 +281,8 @@ create_systemd_service() {
     
     sudo tee /etc/systemd/system/extremist-checker.service << EOF
 [Unit]
-Description=Extremist Checker API
-After=network.target
+Description=Extremist Checker API (Optimized)
+After=network.target redis.service
 
 [Service]
 Type=simple
@@ -241,7 +290,7 @@ User=extremist_checker
 Group=extremist_checker
 WorkingDirectory=/home/extremist_checker/rag_chrome_ext/backend
 Environment=PATH=/home/extremist_checker/rag_chrome_ext/backend/venv/bin
-ExecStart=/home/extremist_checker/rag_chrome_ext/backend/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 4
+ExecStart=/home/extremist_checker/rag_chrome_ext/backend/venv/bin/uvicorn app_optimized:app --host 0.0.0.0 --port 8000 --workers 8 --loop uvloop --http httptools
 Restart=always
 RestartSec=10
 
@@ -399,6 +448,7 @@ main() {
     clone_repository
     setup_python_env
     create_env_file
+    setup_redis
     setup_nginx
     create_systemd_service
     create_monitoring_script
