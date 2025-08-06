@@ -1,6 +1,6 @@
 class ExtremistCheckerPopup {
   constructor() {
-    this.apiUrl = 'https://api.extremist-checker.com/check';
+    this.apiUrl = 'http://localhost:8000/check';
     this.isChecking = false;
     
     this.queryInput = document.getElementById('query');
@@ -178,6 +178,23 @@ class ExtremistCheckerPopup {
     }
 
     let message = `${icon} ${result}`;
+    
+    // Добавляем информацию о материале если он экстремистский
+    if (resultClass === 'danger' && data.material_name) {
+      message += `\n\n📄 Материал: ${data.material_name}`;
+    }
+    
+    if (data.court_date) {
+      message += `\n📅 Дата: ${data.court_date}`;
+    }
+    
+    if (data.court_name) {
+      message += `\n⚖️ Суд: ${data.court_name}`;
+    }
+    
+    if (data.extremist_reason) {
+      message += `\n🔍 Причина: ${data.extremist_reason}`;
+    }
     
     if (data.processing_time) {
       message += `\n\n⏱️ Время обработки: ${data.processing_time.toFixed(2)} сек.`;

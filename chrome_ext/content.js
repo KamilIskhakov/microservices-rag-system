@@ -1,6 +1,6 @@
 class ExtremistContentChecker {
   constructor() {
-    this.apiUrl = 'https://api.extremist-checker.com/check';
+    this.apiUrl = 'http://localhost:8000/check';
     this.isChecking = false;
     this.lastQuery = '';
     this.resultContainer = null;

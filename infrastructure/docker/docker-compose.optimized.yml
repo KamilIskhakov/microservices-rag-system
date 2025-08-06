@@ -1,0 +1,260 @@
+version: '3.8'
+
+services:
+  # Redis для кэширования и очередей
+  redis:
+    image: redis:7-alpine
+    container_name: rag_redis_optimized
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Оптимизированный AI Model API
+  ai-model-optimized:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/Dockerfile.ai-model-optimized
+    container_name: rag_ai_model_optimized
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379
+      # Конфигурация модели
+      - MODEL_PATH=/app/models/qwen-model_full
+      - MODEL_NAME=qwen-model_full
+      - MODEL_TYPE=causal_lm
+      # Конфигурация устройства
+      - DEVICE_TYPE=auto
+      - CPU_THREADS=4
+      - GPU_MEMORY_FRACTION=0.8
+      # Конфигурация сервисов
+      - AI_MODEL_URL=http://ai-model-optimized:8003
+      - VECTORSTORE_URL=http://vectorstore:8002
+      - REQUEST_PROCESSOR_URL=http://request-processor-optimized:8004
+      # Конфигурация производительности
+      - MAX_GENERATION_TIME=30
+      - MAX_WORKERS=8
+      - MAX_PROCESSES=2
+      - MAX_NEW_TOKENS=10
+      - GENERATION_TEMPERATURE=0.1
+      # Конфигурация памяти
+      - MAX_MEMORY_USAGE=0.9
+      - MIN_MEMORY_GB=2
+      # Конфигурация логирования
+      - LOG_LEVEL=INFO
+      # Конфигурация мониторинга
+      - ENABLE_METRICS=true
+      - METRICS_PORT=9090
+    volumes:
+      - ../../models:/app/models
+      - ../../services/ai-model:/app/services/ai-model
+      - ../../src:/app/src
+      - ../../logs:/app/logs
+      - ai_model_data:/app/data
+      - model_cache:/app/model_cache
+    ports:
+      - "8003:8003"
+    depends_on:
+      - redis
+    # Временно отключаем healthcheck для загрузки модели
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+    #   interval: 120s
+    #   timeout: 60s
+    #   retries: 5
+    #   start_period: 600s
+    deploy:
+      resources:
+        limits:
+          memory: 14G
+          cpus: '4.0'
+        reservations:
+          memory: 12G
+          cpus: '2.0'
+
+
+
+  # Scraper Service
+  scraper:
+    build:
+      context: ../..
+      dockerfile: services/scraper/Dockerfile
+    container_name: rag_scraper_optimized
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379
+      # Конфигурация скрапера
+      - MINJUST_URL=http://minjust.ru
+      - SCRAPER_DELAY=0.1
+      - SCRAPER_TIMEOUT=10
+      - SCRAPER_MAX_PAGES=2
+      # Конфигурация сервисов
+      - AI_MODEL_URL=http://ai-model-optimized:8003
+      - VECTORSTORE_URL=http://vectorstore:8002
+      - REQUEST_PROCESSOR_URL=http://request-processor-optimized:8004
+      - API_GATEWAY_URL=http://api-gateway-optimized:8000
+      - SCRAPER_URL=http://scraper-optimized:8001
+      - PAYMENT_URL=http://payment-optimized:8005
+    volumes:
+      - ../../services/scraper:/app
+      - ../../src:/app/src
+      - ../../logs:/app/logs
+      - scraper_data:/app/data
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Request Processor Service
+  request-processor:
+    build:
+      context: ../..
+      dockerfile: services/request-processor/Dockerfile
+    container_name: rag_request_processor_optimized
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ../../services/request-processor:/app
+      - ../../src:/app/src
+      - ../../logs:/app/logs
+    ports:
+      - "8004:8004"
+    depends_on:
+      - redis
+      - ai-model-optimized
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Payment Service
+  payment:
+    build:
+      context: ../..
+      dockerfile: services/payment/Dockerfile
+    container_name: rag_payment_optimized
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379
+      - YOOKASSA_SHOP_ID=${YOOKASSA_SHOP_ID}
+      - YOOKASSA_SECRET_KEY=${YOOKASSA_SECRET_KEY}
+    volumes:
+      - ../../services/payment:/app
+      - ../../src:/app/src
+      - ../../logs:/app/logs
+    ports:
+      - "8005:8005"
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Vector Store Service
+  vectorstore:
+    build:
+      context: ../..
+      dockerfile: services/vectorstore/Dockerfile
+    container_name: rag_vectorstore_optimized
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379
+      - VECTOR_STORE_MODEL=${VECTOR_STORE_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      - RELEVANCE_THRESHOLD=${RELEVANCE_THRESHOLD:-0.3}
+      - TOP_K_RESULTS=${TOP_K_RESULTS:-5}
+    volumes:
+      - ../../services/vectorstore:/app
+      - ../../src:/app/src
+      - ../../logs:/app/logs
+      - docker_vectorstore_data:/app/data
+    ports:
+      - "8002:8002"
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: rag_api_gateway_optimized
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379
+      - API_GATEWAY_HOST=0.0.0.0
+      - API_GATEWAY_PORT=8000
+    volumes:
+      - ../../services/api-gateway:/app
+      - ../../src:/app/src
+      - ../../logs:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - ai-model-optimized
+      - scraper
+      - request-processor
+      - payment
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+volumes:
+  redis_data:
+  ai_model_data:
+  model_cache: 
+  vectorstore_data:
+  docker_vectorstore_data:
+  scraper_data: 

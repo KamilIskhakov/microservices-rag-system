@@ -1,102 +1,48 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+*.pyc
+*.pyo
+*.pyd
 
-# Virtual environments
+# Virtualenv
 venv/
-env/
 ENV/
-env.bak/
-venv.bak/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+.env
+.env.*
 
 # Logs
 *.log
 logs/
 
-# Data files
-*.faiss
-*.faiss.meta
-*.pkl
-*.pickle
+# Data
+*.db
 data/
+backend/data/
 
-# Model files (большие файлы)
-backend/models/*.safetensors
-backend/models/*.bin
-backend/models/*.pt
-backend/models/*.pth
-backend/models/*.json
-backend/models/*.txt
-backend/models/*.md
-backend/models/*/
-
-# Qwen models (большие файлы)
+# Models
+*.safetensors
+*.pt
+*.pth
+*.onnx
 backend/models/qwen-model/
-backend/models/qwen-model_full/
+backend/models/fine_tuned_extremist_model/
 
-# Training files
-training_data.jsonl
-training_examples.json
-fine_tuned_model/
-fine_tuned_model_lora/
+# Jupyter
+.ipynb_checkpoints
 
-# Environment variables
-.env
-.env.local
-.env.production
+# System
+.DS_Store
+Thumbs.db
 
 # Docker
-.dockerignore
+*.pid
 
-# Temporary files
-*.tmp
-*.temp
-temp/
-tmp/
+# Node
+node_modules/
 
-# Chrome extension build files
-chrome_ext/build/
+# Chrome Extension build
 chrome_ext/dist/
-chrome_ext/*.zip
-chrome_ext/*.crx
 
-# Payment keys (security)
-**/payment_keys/
-**/yookassa_keys/
-*.key
-*.pem
+# Misc
+*.bak
+*.swp

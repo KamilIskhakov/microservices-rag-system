@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rag-config
+  namespace: rag-system
+data:
+  # Redis конфигурация
+  REDIS_URL: "redis://redis-service:6379"
+  
+  # Модель конфигурация
+  MODEL_PATH: "/app/models/qwen-model_full"
+  DEVICE: "cpu"
+  
+  # API конфигурация
+  UVICORN_WORKERS: "4"
+  UVICORN_LOOP: "uvloop"
+  UVICORN_HTTP: "httptools"
+  
+  # Логирование
+  LOG_LEVEL: "INFO"
+  
+  # Министерство юстиции
+  MINJUST_BASE_URL: "https://minjust.gov.ru/ru/extremist-materials/"
+  
+  # Платежи (заполнить реальными значениями)
+  YOOKASSA_SHOP_ID: ""
+  YOOKASSA_SECRET_KEY: "" 

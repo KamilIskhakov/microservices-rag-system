@@ -9,7 +9,7 @@
     "128": "extr_logo_eye_2.png"
   },
   "permissions": ["activeTab", "storage", "scripting"],
-  "host_permissions": ["*://*.google.com/*", "*://*.yandex.ru/*", "*://*.bing.com/*", "*://*.duckduckgo.com/*", "https://api.extremist-checker.com/*"],
+  "host_permissions": ["*://*.google.com/*", "*://*.yandex.ru/*", "*://*.bing.com/*", "*://*.duckduckgo.com/*", "http://localhost:8000/*"],
   "background": {"service_worker": "background.js"},
   "content_scripts": [{
     "matches": ["*://*.google.com/*", "*://*.yandex.ru/*", "*://*.bing.com/*", "*://*.duckduckgo.com/*"],
