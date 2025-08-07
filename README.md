@@ -1,4 +1,4 @@
-# RAG Chrome Extension
+# Microservices-rag-system
 
 Микросервисная система для анализа текстов на экстремизм с использованием RAG (Retrieval-Augmented Generation) и Chrome Extension.
 
