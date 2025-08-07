@@ -16,15 +16,12 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import psutil
 
-# Добавляем путь к доменной логике
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Импорты доменной логики
 from domain.services.model_service import ModelService
 from infrastructure.persistence.optimized_model_repository import OptimizedModelRepository
 from application.use_cases.generate_text import GenerateTextUseCase, GenerateTextRequest
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -33,15 +30,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Model Service", version="2.0.0")
 
-# Глобальные переменные
 model_service: Optional[ModelService] = None
 generate_text_use_case: Optional[GenerateTextUseCase] = None
 
-# Пул потоков для генерации
 thread_pool: Optional[ThreadPoolExecutor] = None
 process_pool: Optional[ProcessPoolExecutor] = None
 
-# Конфигурация из переменных окружения
 MAX_WORKERS = int(os.getenv("MAX_WORKERS", "8"))
 MAX_PROCESSES = int(os.getenv("MAX_PROCESSES", "2"))
 
@@ -96,16 +90,12 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация AI Model Service...")
         
-        # Инициализируем репозиторий
         model_repository = OptimizedModelRepository()
         
-        # Инициализируем доменный сервис
         model_service = ModelService(model_repository)
         
-        # Инициализируем use cases
         generate_text_use_case = GenerateTextUseCase(model_service)
         
-        # Инициализируем пулы потоков
         thread_pool = ThreadPoolExecutor(max_workers=MAX_WORKERS)
         process_pool = ProcessPoolExecutor(max_workers=MAX_PROCESSES)
         
@@ -143,7 +133,6 @@ async def health_check():
         if model_service is None:
             return {"status": "unhealthy", "error": "Service not initialized"}
         
-        # Проверяем доступность моделей
         loaded_models = model_service.get_loaded_models()
         
         return {
@@ -232,7 +221,6 @@ async def generate_response(request: ModelRequest):
         
         logger.info(f"Генерируем ответ для модели: {request.model_id}")
         
-        # Создаем запрос для use case
         use_case_request = GenerateTextRequest(
             query=request.query,
             context=request.context,
@@ -241,10 +229,8 @@ async def generate_response(request: ModelRequest):
             model_id=request.model_id
         )
         
-        # Выполняем use case
         response = generate_text_use_case.execute(use_case_request)
         
-        # Получаем информацию о памяти
         memory_usage = model_service.get_memory_usage() if model_service else None
         
         return ModelResponse(

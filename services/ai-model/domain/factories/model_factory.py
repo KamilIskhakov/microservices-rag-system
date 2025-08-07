@@ -41,13 +41,11 @@ class OptimizedModelFactory(ModelFactory):
         base_path = "/app/models"
         return {
             "qwen-model_full": os.path.join(base_path, "qwen-model_full"),
-            # Добавьте другие модели по необходимости
         }
     
     def create_model(self, model_id: str, config: Dict[str, Any] = None) -> Tuple[Any, Any]:
         """Создать модель и токенизатор с оптимизацией"""
         try:
-            # Проверяем доступность модели
             if model_id not in self.model_paths:
                 raise ValueError(f"Модель {model_id} не найдена в конфигурации")
             
@@ -55,15 +53,12 @@ class OptimizedModelFactory(ModelFactory):
             if not os.path.exists(model_path):
                 raise ValueError(f"Путь к модели не существует: {model_path}")
             
-            # Выбираем устройство
             device = self.device_strategy.select_device(model_id, config)
             
             logger.info(f"Создаем модель {model_id} на устройстве {device}")
             
-            # Загружаем токенизатор
             tokenizer = AutoTokenizer.from_pretrained(model_path)
             
-            # Загружаем модель с оптимизациями
             model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 torch_dtype=torch.float32,
@@ -71,7 +66,6 @@ class OptimizedModelFactory(ModelFactory):
                 low_cpu_mem_usage=True
             )
             
-            # Оптимизации для GPU
             if device == "cuda":
                 model = model.half()  # Используем float16 для экономии памяти
                 torch.cuda.empty_cache()
@@ -143,5 +137,4 @@ class ModelFactoryRegistry:
         return list(cls._factories.keys())
 
 
-# Регистрируем фабрики по умолчанию
 ModelFactoryRegistry.register_factory("optimized", OptimizedModelFactory())

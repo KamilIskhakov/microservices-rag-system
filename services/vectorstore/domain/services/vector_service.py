@@ -25,18 +25,15 @@ class VectorService:
     
     def add_document(self, content: str, metadata: Dict[str, Any]) -> str:
         """Добавить документ"""
-        # Создаем документ
         document = VectorDocument(
             id=None,
             content=content,
             metadata=metadata
         )
         
-        # Генерируем эмбеддинг
         embedding = self._get_embedding_model().encode(content)
         document.update_embedding(embedding.tolist())
         
-        # Сохраняем документ
         return self.vector_repository.save_document(document)
     
     def add_documents(self, documents: List[Dict[str, Any]]) -> List[str]:
@@ -51,15 +48,12 @@ class VectorService:
             )
             vector_documents.append(document)
         
-        # Генерируем эмбеддинги для всех документов
         contents = [doc.content for doc in vector_documents]
         embeddings = self._get_embedding_model().encode(contents)
         
-        # Обновляем документы с эмбеддингами
         for i, document in enumerate(vector_documents):
             document.update_embedding(embeddings[i].tolist())
         
-        # Сохраняем документы
         return self.vector_repository.add_documents(vector_documents)
     
     async def search_similar(self, query: str, top_k: int = 5, threshold: float = 0.3) -> List[SearchResult]:
@@ -70,11 +64,9 @@ class VectorService:
         try:
             logger.info(f"VectorService: generating embedding for query: {query[:50]}...")
             
-            # Генерируем эмбеддинг для запроса
             query_embedding = self._get_embedding_model().encode(query)
             logger.info(f"VectorService: embedding generated, length: {len(query_embedding)}")
             
-            # Ищем похожие документы
             logger.info(f"VectorService: calling repository.search_similar with top_k={top_k}, threshold={threshold}")
             
             results = await self.vector_repository.search_similar(
@@ -96,20 +88,16 @@ class VectorService:
     
     def update_document(self, document_id: str, content: str, metadata: Dict[str, Any]) -> bool:
         """Обновить документ"""
-        # Получаем существующий документ
         existing_doc = self.vector_repository.get_document(document_id)
         if not existing_doc:
             return False
         
-        # Обновляем содержимое и метаданные
         existing_doc.content = content
         existing_doc.update_metadata(metadata)
         
-        # Генерируем новый эмбеддинг
         embedding = self._get_embedding_model().encode(content)
         existing_doc.update_embedding(embedding.tolist())
         
-        # Сохраняем обновленный документ
         return self.vector_repository.update_document(document_id, existing_doc)
     
     def delete_document(self, document_id: str) -> bool:

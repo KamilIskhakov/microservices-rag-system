@@ -88,11 +88,9 @@ class InMemoryRequestRepository(RequestRepository):
         if request_id in self.requests:
             request = self.requests[request_id]
             
-            # Удаляем из списка пользователя
             if request.user_id and request_id in self.user_requests[request.user_id]:
                 self.user_requests[request.user_id].remove(request_id)
             
-            # Удаляем запрос
             del self.requests[request_id]
             
             logger.info(f"Запрос удален: {request_id}")

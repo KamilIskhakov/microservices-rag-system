@@ -41,12 +41,10 @@ class PaymentService:
             raise ValueError(f"Платеж {payment_id} не найден")
         
         try:
-            # Имитация обработки платежа через YooKassa
             if self._process_yookassa_payment(payment):
                 payment.complete()
                 self.payment_repository.update_payment_status(payment_id, "completed")
                 
-                # Создаем подписку при успешном платеже
                 subscription = self._create_subscription_for_payment(payment)
                 
                 return {
@@ -80,21 +78,16 @@ class PaymentService:
     
     def _process_yookassa_payment(self, payment: Payment) -> bool:
         """Обработать платеж через YooKassa (имитация)"""
-        # В реальном проекте здесь был бы вызов API YooKassa
-        # Сейчас просто имитируем успешную обработку
         logger.info(f"Обрабатываем платеж через YooKassa: {payment.id}")
         
-        # Проверяем наличие конфигурации
         if not self.shop_id or not self.secret_key:
             logger.warning("YooKassa конфигурация не настроена")
             return False
         
-        # Имитируем успешную обработку
         return True
     
     def _create_subscription_for_payment(self, payment: Payment) -> Subscription:
         """Создать подписку для платежа"""
-        # Определяем тип подписки по сумме
         plan_type = self._determine_plan_type(payment.amount)
         
         subscription = Subscription(

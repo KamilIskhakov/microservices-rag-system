@@ -38,15 +38,11 @@ class GenerateTextUseCase:
         start_time = time.time()
         
         try:
-            # Проверяем доступность модели
             if not self.model_service.is_model_available(request.model_id):
-                # Пытаемся загрузить модель
                 self.model_service.load_model(request.model_id)
             
-            # Формируем промпт с контекстом
             prompt = self._build_prompt(request.query, request.context or [])
             
-            # Генерируем текст
             result = self.model_service.generate_text(
                 model_id=request.model_id,
                 prompt=prompt,

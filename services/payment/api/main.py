@@ -11,14 +11,11 @@ import sys
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Добавляем путь к доменной логике
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Импорты доменной логики
 from domain.services.payment_service import PaymentService
 from infrastructure.persistence.in_memory_repository import InMemoryPaymentRepository
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -27,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Payment Service", version="2.0.0")
 
-# Глобальные переменные
 payment_service: Optional[PaymentService] = None
 
 
@@ -97,10 +93,8 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация Payment Service...")
         
-        # Инициализируем репозиторий
         payment_repository = InMemoryPaymentRepository()
         
-        # Инициализируем доменный сервис
         payment_service = PaymentService(payment_repository)
         
         logger.info("✅ Payment Service готов к работе")
@@ -117,7 +111,6 @@ async def health_check():
         if payment_service is None:
             return {"status": "unhealthy", "error": "Service not initialized"}
         
-        # Проверяем доступность сервиса
         stats = payment_service.get_statistics()
         
         return {
@@ -144,7 +137,6 @@ async def create_payment(request: CreatePaymentRequest):
         
         logger.info(f"Создаем платеж для пользователя: {request.user_id}")
         
-        # Создаем платеж
         payment = payment_service.create_payment(
             user_id=request.user_id,
             amount=request.amount,
@@ -184,7 +176,6 @@ async def process_payment(payment_id: str):
         
         logger.info(f"Обрабатываем платеж: {payment_id}")
         
-        # Обрабатываем платеж
         result = payment_service.process_payment(payment_id)
         
         processing_time = time.time() - start_time

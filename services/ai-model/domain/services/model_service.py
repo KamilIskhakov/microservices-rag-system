@@ -47,5 +47,4 @@ class ModelService:
         if not self.is_model_available(model_id):
             raise ValueError(f"Модель {model_id} недоступна")
         
-        # Делегируем генерацию в репозиторий
         return self.model_repository.generate_text(model_id, prompt, max_length, temperature)

@@ -35,7 +35,6 @@ class GatewayService:
         """Маршрутизировать запрос к соответствующему сервису"""
         start_time = time.time()
         
-        # Создаем запрос
         gateway_request = GatewayRequest(
             id=None,
             method=method,
@@ -47,25 +46,20 @@ class GatewayService:
         )
         
         try:
-            # Определяем целевой сервис
             target_service = self._determine_target_service(path)
             if not target_service:
                 raise ValueError(f"Неизвестный путь: {path}")
             
-            # Проверяем доступность сервиса
             if not self.services[target_service].is_available:
                 raise Exception(f"Сервис {target_service} недоступен")
             
-            # Формируем URL для запроса
             service_url = self.services[target_service].url
             target_url = f"{service_url}{path}"
             
             logger.info(f"Маршрутизируем запрос {method} {path} к сервису {target_service}")
             
-            # Выполняем запрос
             response = await self._make_request(method, target_url, headers, body)
             
-            # Обновляем запрос
             processing_time = time.time() - start_time
             gateway_request.set_response(response["status_code"], response["body"])
             gateway_request.set_processing_time(processing_time)

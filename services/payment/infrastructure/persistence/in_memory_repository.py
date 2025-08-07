@@ -117,11 +117,9 @@ class InMemoryPaymentRepository(PaymentRepository):
         if payment_id in self.payments:
             payment = self.payments[payment_id]
             
-            # Удаляем из списка пользователя
             if payment.user_id and payment_id in self.user_payments[payment.user_id]:
                 self.user_payments[payment.user_id].remove(payment_id)
             
-            # Удаляем платеж
             del self.payments[payment_id]
             
             logger.info(f"Платеж удален: {payment_id}")
@@ -133,11 +131,9 @@ class InMemoryPaymentRepository(PaymentRepository):
         if subscription_id in self.subscriptions:
             subscription = self.subscriptions[subscription_id]
             
-            # Удаляем из списка пользователя
             if subscription.user_id and subscription.user_id in self.user_subscriptions:
                 del self.user_subscriptions[subscription.user_id]
             
-            # Удаляем подписку
             del self.subscriptions[subscription_id]
             
             logger.info(f"Подписка удалена: {subscription_id}")

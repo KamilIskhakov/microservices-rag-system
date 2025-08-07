@@ -31,14 +31,11 @@ class FAISSRepository(VectorRepository):
     def _load_or_create_index(self):
         """Загрузить или создать индекс"""
         try:
-            # Создаем директорию если не существует
             os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
             
-            # Загружаем модель эмбеддингов
             self.embedding_model = SentenceTransformer(self.model_name)
             embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
             
-            # Пытаемся загрузить существующий индекс
             index_file = f"{self.index_path}.faiss"
             docs_file = f"{self.index_path}.pkl"
             
@@ -78,15 +75,12 @@ class FAISSRepository(VectorRepository):
     def save_document(self, document: VectorDocument) -> str:
         """Сохранить документ"""
         try:
-            # Добавляем документ в словарь
             self.documents[document.id] = document
             
-            # Добавляем эмбеддинг в индекс
             if document.embedding:
                 embedding_array = np.array([document.embedding], dtype=np.float32)
                 self.index.add(embedding_array)
             
-            # Сохраняем индекс
             self._save_index()
             
             logger.info(f"Документ сохранен: {document.id}")
@@ -106,19 +100,15 @@ class FAISSRepository(VectorRepository):
             if self.index.ntotal == 0:
                 return []
             
-            # Преобразуем запрос в numpy array
             query_array = np.array([query_embedding], dtype=np.float32)
             
-            # Нормализуем для косинусного сходства
             faiss.normalize_L2(query_array)
             
-            # Выполняем поиск
             scores, indices = self.index.search(query_array, min(top_k, self.index.ntotal))
             
             results = []
             for i, (score, idx) in enumerate(zip(scores[0], indices[0])):
                 if score >= threshold and idx != -1:
-                    # Получаем документ по индексу
                     doc_id = list(self.documents.keys())[idx]
                     document = self.documents[doc_id]
                     
@@ -150,12 +140,10 @@ class FAISSRepository(VectorRepository):
                 if document.embedding:
                     embeddings.append(document.embedding)
             
-            # Добавляем все эмбеддинги в индекс
             if embeddings:
                 embeddings_array = np.array(embeddings, dtype=np.float32)
                 self.index.add(embeddings_array)
             
-            # Сохраняем индекс
             self._save_index()
             
             logger.info(f"Добавлено {len(documents)} документов")
@@ -171,10 +159,8 @@ class FAISSRepository(VectorRepository):
             if document_id not in self.documents:
                 return False
             
-            # Обновляем документ
             self.documents[document_id] = document
             
-            # Перестраиваем индекс
             self.rebuild_index()
             
             logger.info(f"Документ обновлен: {document_id}")
@@ -190,10 +176,8 @@ class FAISSRepository(VectorRepository):
             if document_id not in self.documents:
                 return False
             
-            # Удаляем документ
             del self.documents[document_id]
             
-            # Перестраиваем индекс
             self.rebuild_index()
             
             logger.info(f"Документ удален: {document_id}")
@@ -222,11 +206,9 @@ class FAISSRepository(VectorRepository):
         try:
             self.documents.clear()
             
-            # Создаем новый индекс
             embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
             self.index = faiss.IndexFlatIP(embedding_dim)
             
-            # Сохраняем пустой индекс
             self._save_index()
             
             logger.info("Индекс очищен")
@@ -239,11 +221,9 @@ class FAISSRepository(VectorRepository):
     def rebuild_index(self) -> bool:
         """Перестроить индекс"""
         try:
-            # Создаем новый индекс
             embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
             self.index = faiss.IndexFlatIP(embedding_dim)
             
-            # Добавляем все документы с эмбеддингами
             embeddings = []
             for document in self.documents.values():
                 if document.embedding:
@@ -253,7 +233,6 @@ class FAISSRepository(VectorRepository):
                 embeddings_array = np.array(embeddings, dtype=np.float32)
                 self.index.add(embeddings_array)
             
-            # Сохраняем индекс
             self._save_index()
             
             logger.info("Индекс перестроен")

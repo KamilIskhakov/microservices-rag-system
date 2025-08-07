@@ -27,7 +27,6 @@ class RequestService:
         start_time = time.time()
         
         try:
-            # Создаем запрос
             request = Request(
                 id=None,
                 query=query,
@@ -36,11 +35,9 @@ class RequestService:
                 status="processing"
             )
             
-            # Сохраняем запрос
             request_id = self.request_repository.save_request(request)
             logger.info(f"Создан запрос: {request_id}")
             
-            # Обрабатываем запрос через сервисы
             results = {}
             
             if services is None or "ai-model" in services:
@@ -67,7 +64,6 @@ class RequestService:
                     logger.error(f"Ошибка Payment Service: {e}")
                     results["payment"] = {"error": str(e)}
             
-            # Обновляем результаты
             processing_time = time.time() - start_time
             self.request_repository.update_request_results(request_id, results)
             self.request_repository.update_request_status(request_id, "completed")

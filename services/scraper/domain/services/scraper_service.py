@@ -48,25 +48,20 @@ class ScraperService:
             raise ValueError(f"Задача {job_id} не найдена")
         
         try:
-            # Начинаем выполнение
             job.start()
             self.scraper_repository.update_job_status(job_id, "running")
             
             logger.info(f"Выполняем задачу скрапинга: {job_id}")
             
-            # Выполняем скрапинг в зависимости от типа
             if job.job_type == "minjust":
                 scraped_data = await self._scrape_minjust(job.source_url)
             else:
                 scraped_data = await self._scrape_generic(job.source_url)
             
-            # Сохраняем скрапленные данные
             data_id = self.scraper_repository.save_scraped_data(scraped_data)
             
-            # Отправляем в Vector Store
             await self._send_to_vectorstore(scraped_data)
             
-            # Завершаем задачу
             job.complete()
             self.scraper_repository.update_job_status(job_id, "completed")
             
@@ -102,10 +97,8 @@ class ScraperService:
                 
                 content = await response.text()
                 
-                # Извлекаем заголовок
                 title = self._extract_title(content)
                 
-                # Создаем объект данных
                 scraped_data = ScrapedData(
                     id=None,
                     source_url=url,
@@ -135,10 +128,8 @@ class ScraperService:
                 
                 content = await response.text()
                 
-                # Извлекаем заголовок
                 title = self._extract_title(content)
                 
-                # Создаем объект данных
                 scraped_data = ScrapedData(
                     id=None,
                     source_url=url,
@@ -173,7 +164,6 @@ class ScraperService:
         try:
             session = await self._get_session()
             
-            # Подготавливаем данные для отправки
             document_data = {
                 "content": scraped_data.content,
                 "metadata": {

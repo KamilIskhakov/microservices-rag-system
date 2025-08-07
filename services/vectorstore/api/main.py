@@ -11,14 +11,11 @@ import sys
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Добавляем путь к доменной логике
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Импорты доменной логики
 from domain.services.vector_service import VectorService
 from infrastructure.persistence.optimized_faiss_repository import OptimizedFAISSRepository
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -27,10 +24,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Vector Store Service", version="2.0.0")
 
-# Глобальные переменные
 vector_service: Optional[VectorService] = None
 
-# Конфигурация из переменных окружения
 MODEL_NAME = os.getenv("VECTOR_STORE_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 RELEVANCE_THRESHOLD = float(os.getenv("RELEVANCE_THRESHOLD", "0.3"))
 TOP_K_RESULTS = int(os.getenv("TOP_K_RESULTS", "5"))
@@ -86,10 +81,8 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация Vector Store Service...")
         
-        # Инициализируем репозиторий
         vector_repository = OptimizedFAISSRepository(model_name=MODEL_NAME)
         
-        # Инициализируем доменный сервис
         vector_service = VectorService(vector_repository, MODEL_NAME)
         
         logger.info("✅ Vector Store Service готов к работе")
@@ -106,7 +99,6 @@ async def health_check():
         if vector_service is None:
             return {"status": "unhealthy", "error": "Service not initialized"}
         
-        # Проверяем доступность сервиса
         stats = await vector_service.get_statistics()
         
         return {
@@ -133,7 +125,6 @@ async def add_document(request: DocumentRequest):
         
         logger.info(f"Добавляем документ: {request.content[:50]}...")
         
-        # Добавляем документ
         document_id = vector_service.add_document(
             content=request.content,
             metadata=request.metadata
@@ -164,7 +155,6 @@ async def add_documents(documents: List[DocumentRequest]):
         
         logger.info(f"Добавляем {len(documents)} документов...")
         
-        # Подготавливаем данные для добавления
         docs_data = []
         for doc in documents:
             docs_data.append({
@@ -172,7 +162,6 @@ async def add_documents(documents: List[DocumentRequest]):
                 "metadata": doc.metadata
             })
         
-        # Добавляем документы
         document_ids = vector_service.add_documents(docs_data)
         
         processing_time = time.time() - start_time
@@ -201,14 +190,12 @@ async def search_documents(request: SearchRequest):
         
         logger.info(f"Поиск: {request.query[:50]}...")
         
-        # Выполняем поиск
         results = await vector_service.search_similar(
             query=request.query,
             top_k=request.top_k,
             threshold=request.threshold
         )
         
-        # Преобразуем результаты в словари
         results_data = []
         logger.info(f"Преобразуем {len(results)} результатов поиска")
         
@@ -282,7 +269,6 @@ async def update_document(document_id: str, request: DocumentRequest):
         
         logger.info(f"Обновляем документ: {document_id}")
         
-        # Обновляем документ
         success = vector_service.update_document(
             document_id=document_id,
             content=request.content,
@@ -317,7 +303,6 @@ async def delete_document(document_id: str):
         
         logger.info(f"Удаляем документ: {document_id}")
         
-        # Удаляем документ
         success = vector_service.delete_document(document_id)
         
         if not success:

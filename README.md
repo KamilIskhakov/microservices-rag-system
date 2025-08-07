@@ -1,6 +1,6 @@
 # Microservices-rag-system
 
-Микросервисная система для анализа текстов на экстремизм с использованием RAG (Retrieval-Augmented Generation) и Chrome Extension.
+Микросервисная система для анализа текстов на экстремизм (по минюсту РФ) с использованием RAG (Retrieval-Augmented Generation) и Chrome Extension.
 
 ## Архитектура
 

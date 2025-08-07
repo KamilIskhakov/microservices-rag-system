@@ -31,34 +31,27 @@ class OptimizedFAISSRepository(VectorRepository):
                  nprobe: int = 10,
                  cache_ttl: int = 3600):
         
-        # Инициализация модели эмбеддингов
         self.model = SentenceTransformer(model_name)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         
-        # FAISS индекс
         self.index = None
         self.index_type = index_type
         self.nlist = nlist
         self.nprobe = nprobe
         
-        # Кэширование
         self.redis_client = redis.Redis(host="redis", port=6379, db=0, decode_responses=True)
         self.cache_ttl = cache_ttl
         
-        # Локальный кэш документов
         self.documents_cache = {}
         self.embeddings_cache = {}
         
-        # ThreadPool для CPU операций
         self.executor = ThreadPoolExecutor(max_workers=4)
         
-        # Метрики
         self.search_count = 0
         self.cache_hits = 0
         self.cache_misses = 0
         
-        # Загрузка существующего индекса
         self._load_index()
     
     def _load_index(self):
@@ -68,15 +61,12 @@ class OptimizedFAISSRepository(VectorRepository):
                 self.index = faiss.read_index("/app/data/faiss_index")
                 logger.info(f"Loaded existing FAISS index with {self.index.ntotal} vectors")
                 
-                # Загружаем документы из JSON файла
                 if os.path.exists("/app/data/documents.json"):
                     with open("/app/data/documents.json", "r", encoding="utf-8") as f:
                         documents_data = json.load(f)
-                        # Сортируем документы по ID для соответствия индексам FAISS
                         sorted_docs = sorted(documents_data.items(), key=lambda x: x[0])
                         
                         for i, (doc_id, doc_data) in enumerate(sorted_docs):
-                            # Поддерживаем как старый формат (text), так и новый (content)
                             content = doc_data.get("content") or doc_data.get("text", "")
                             document = VectorDocument(
                                 id=str(i),  # Используем числовой индекс как ID
@@ -96,17 +86,14 @@ class OptimizedFAISSRepository(VectorRepository):
         dimension = self.model.get_sentence_embedding_dimension()
         
         if self.index_type == "IndexIVFFlat":
-            # Квантизированный индекс для быстрого поиска
             quantizer = faiss.IndexFlatIP(dimension)
             self.index = faiss.IndexIVFFlat(quantizer, dimension, self.nlist)
             self.index.nprobe = self.nprobe
         elif self.index_type == "IndexHNSW":
-            # Иерархический индекс для высокой точности
             self.index = faiss.IndexHNSWFlat(dimension, 32)  # 32 соседа
             self.index.hnsw.efConstruction = 200
             self.index.hnsw.efSearch = 100
         else:
-            # Простой индекс для точного поиска
             self.index = faiss.IndexFlatIP(dimension)
         
         logger.info(f"Created new {self.index_type} index with dimension {dimension}")
@@ -114,24 +101,19 @@ class OptimizedFAISSRepository(VectorRepository):
     async def save_document(self, document: VectorDocument) -> str:
         """Сохранение документа с оптимизацией"""
         try:
-            # Генерация эмбеддинга
             embedding = await self._generate_embedding(document.content)
             
-            # Добавление в индекс
             embedding_array = np.array([embedding], dtype=np.float32)
             
             if self.index_type == "IndexIVFFlat" and not self.index.is_trained:
-                # Тренировка индекса при необходимости
                 self.index.train(embedding_array)
             
             self.index.add(embedding_array)
             
-            # Сохранение документа в кэш
             doc_id = str(len(self.documents_cache))
             self.documents_cache[doc_id] = document
             document.id = doc_id
             
-            # Кэширование эмбеддинга
             cache_key = f"embedding:{doc_id}"
             await self.redis_client.setex(
                 cache_key, 
@@ -139,7 +121,6 @@ class OptimizedFAISSRepository(VectorRepository):
                 json.dumps(embedding.tolist())
             )
             
-            # Сохранение индекса на диск
             await self._save_index_async()
             
             logger.info(f"Saved document {doc_id} with embedding size {len(embedding)}")
@@ -155,17 +136,14 @@ class OptimizedFAISSRepository(VectorRepository):
         
         logger.info(f"OptimizedFAISSRepository: starting search with top_k={top_k}, threshold={threshold}")
         
-        # Создаем ключ кэша
         query_hash = hash(tuple(query_embedding))
         cache_key = f"search:{query_hash}:{top_k}:{threshold}"
         
-        # Проверяем кэш
         cached_result = await self.redis_client.get(cache_key)
         if cached_result:
             self.cache_hits += 1
             logger.info("OptimizedFAISSRepository: returning cached result")
             cached_data = json.loads(cached_result)
-            # Преобразуем словари обратно в объекты SearchResult
             results = []
             for item in cached_data:
                 result = SearchResult(
@@ -184,11 +162,9 @@ class OptimizedFAISSRepository(VectorRepository):
         try:
             logger.info(f"Starting search with query embedding length: {len(query_embedding)}")
             
-            # Нормализация вектора запроса
             query_vector = np.array(query_embedding, dtype=np.float32)
             query_vector = query_vector / np.linalg.norm(query_vector)
             
-            # Поиск в FAISS
             search_k = min(top_k * 2, self.index.ntotal)
             logger.info(f"Searching FAISS index with k={search_k}, total vectors={self.index.ntotal}")
             
@@ -197,13 +173,11 @@ class OptimizedFAISSRepository(VectorRepository):
                 search_k
             )
             
-            # Фильтрация и формирование результатов
             results = []
             logger.info(f"Search: found {len(similarities[0])} candidates, threshold={threshold}, cache_size={len(self.documents_cache)}")
             
             for i, (similarity, idx) in enumerate(zip(similarities[0], indices[0])):
                 if similarity >= threshold and len(results) < top_k:
-                    # Получаем документ из кэша
                     doc_id = str(idx)
                     document = self.documents_cache.get(doc_id)
                     
@@ -218,7 +192,6 @@ class OptimizedFAISSRepository(VectorRepository):
                     else:
                         logger.warning(f"Document {doc_id} not found in cache")
             
-            # Кэшируем результат
             await self.redis_client.setex(
                 cache_key, 
                 self.cache_ttl, 
@@ -237,7 +210,6 @@ class OptimizedFAISSRepository(VectorRepository):
     async def _generate_embedding(self, text: str) -> List[float]:
         """Генерация эмбеддинга с кэшированием"""
         
-        # Проверяем кэш
         text_hash = hash(text)
         cache_key = f"embedding_gen:{text_hash}"
         
@@ -245,7 +217,6 @@ class OptimizedFAISSRepository(VectorRepository):
         if cached_embedding:
             return json.loads(cached_embedding)
         
-        # Генерируем эмбеддинг в отдельном потоке
         loop = asyncio.get_event_loop()
         embedding = await loop.run_in_executor(
             self.executor,
@@ -253,7 +224,6 @@ class OptimizedFAISSRepository(VectorRepository):
             text
         )
         
-        # Кэшируем результат
         await self.redis_client.setex(
             cache_key, 
             self.cache_ttl, 
@@ -279,7 +249,6 @@ class OptimizedFAISSRepository(VectorRepository):
                 "/app/data/faiss_index"
             )
             
-            # Сохраняем документы в JSON файл
             documents_data = {}
             for doc_id, document in self.documents_cache.items():
                 documents_data[doc_id] = {
@@ -325,10 +294,8 @@ class OptimizedFAISSRepository(VectorRepository):
         """Перестроение индекса с оптимизацией"""
         logger.info("Starting index rebuild...")
         
-        # Создаем новый индекс
         self._create_new_index()
         
-        # Перестраиваем из кэша
         for doc_id, document in self.documents_cache.items():
             embedding = await self._generate_embedding(document.content)
             embedding_array = np.array([embedding], dtype=np.float32)
@@ -338,20 +305,16 @@ class OptimizedFAISSRepository(VectorRepository):
             
             self.index.add(embedding_array)
         
-        # Сохраняем новый индекс
         await self._save_index_async()
         
         logger.info(f"Index rebuild completed: {self.index.ntotal} vectors")
     
     async def optimize_memory(self):
         """Оптимизация памяти"""
-        # Очистка кэша Redis
         await self.redis_client.flushdb()
         
-        # Очистка локального кэша
         self.embeddings_cache.clear()
         
-        # Принудительная сборка мусора
         import gc
         gc.collect()
         
@@ -379,10 +342,7 @@ class OptimizedFAISSRepository(VectorRepository):
         """Обновить документ"""
         try:
             if document_id in self.documents_cache:
-                # Удаляем старый документ из индекса
-                # (FAISS не поддерживает обновление, поэтому пересоздаем)
                 self.delete_document(document_id)
-                # Добавляем обновленный документ
                 asyncio.run(self.save_document(document))
                 return True
             return False
@@ -395,8 +355,6 @@ class OptimizedFAISSRepository(VectorRepository):
         try:
             if document_id in self.documents_cache:
                 del self.documents_cache[document_id]
-                # FAISS не поддерживает удаление отдельных векторов
-                # Поэтому пересоздаем индекс без удаленного документа
                 self._rebuild_index_without_document(document_id)
                 return True
             return False
@@ -422,10 +380,8 @@ class OptimizedFAISSRepository(VectorRepository):
     def _rebuild_index_without_document(self, document_id: str):
         """Пересоздать индекс без указанного документа"""
         try:
-            # Создаем новый индекс
             self._create_new_index()
             
-            # Добавляем все документы кроме удаленного
             for doc_id, document in self.documents_cache.items():
                 if doc_id != document_id:
                     embedding = asyncio.run(self._generate_embedding(document.content))
@@ -437,17 +393,13 @@ class OptimizedFAISSRepository(VectorRepository):
     async def _rebuild_index_async(self):
         """Асинхронное пересоздание индекса"""
         try:
-            # Сохраняем текущие документы
             documents = list(self.documents_cache.values())
             
-            # Очищаем кэши
             self.documents_cache.clear()
             self.embeddings_cache.clear()
             
-            # Создаем новый индекс
             self._create_new_index()
             
-            # Пересоздаем документы
             for document in documents:
                 await self.save_document(document)
                 

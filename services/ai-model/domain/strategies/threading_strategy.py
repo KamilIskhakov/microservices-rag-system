@@ -103,7 +103,6 @@ class HybridThreadingStrategy(ThreadingStrategy):
     
     async def execute_task(self, task: Callable, *args, **kwargs) -> Any:
         """Выполнить задачу с автоматическим выбором исполнителя"""
-        # Определяем тип задачи по имени или аннотациям
         executor = self._select_executor(task)
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(executor, task, *args, **kwargs)
@@ -124,12 +123,10 @@ class HybridThreadingStrategy(ThreadingStrategy):
         """Выбрать подходящий исполнитель для задачи"""
         task_name = task.__name__.lower()
         
-        # CPU-интенсивные задачи
         cpu_intensive_keywords = ['compute', 'calculate', 'process', 'generate', 'encode']
         if any(keyword in task_name for keyword in cpu_intensive_keywords):
             return self.process_executor
         
-        # I/O-интенсивные задачи
         return self.thread_executor
     
     def cleanup(self):

@@ -11,14 +11,11 @@ import sys
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Добавляем путь к доменной логике
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Импорты доменной логики
 from domain.services.request_service import RequestService
 from infrastructure.persistence.in_memory_repository import InMemoryRequestRepository
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -27,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Request Processor Service", version="2.0.0")
 
-# Глобальные переменные
 request_service: Optional[RequestService] = None
 
 
@@ -81,10 +77,8 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация Request Processor Service...")
         
-        # Инициализируем репозиторий
         request_repository = InMemoryRequestRepository()
         
-        # Инициализируем доменный сервис
         request_service = RequestService(request_repository)
         
         logger.info("✅ Request Processor Service готов к работе")
@@ -101,7 +95,6 @@ async def health_check():
         if request_service is None:
             return {"status": "unhealthy", "error": "Service not initialized"}
         
-        # Проверяем доступность сервиса
         stats = request_service.get_statistics()
         
         return {
@@ -128,7 +121,6 @@ async def process_request(request: ProcessRequest):
         
         logger.info(f"Обрабатываем запрос: {request.query[:50]}...")
         
-        # Обрабатываем запрос
         result = await request_service.process_request(
             query=request.query,
             user_id=request.user_id,
@@ -276,7 +268,6 @@ async def get_pending_requests():
         if request_service is None:
             raise HTTPException(status_code=503, detail="Service not initialized")
         
-        # Получаем ожидающие запросы через репозиторий
         pending_requests = request_service.request_repository.get_pending_requests()
         
         result = []

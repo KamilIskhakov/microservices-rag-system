@@ -12,14 +12,11 @@ import sys
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
-# Добавляем путь к доменной логике
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Импорты доменной логики
 from domain.services.scraper_service import ScraperService
 from infrastructure.persistence.in_memory_repository import InMemoryScraperRepository
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -28,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Scraper Service", version="2.0.0")
 
-# Глобальные переменные
 scraper_service: Optional[ScraperService] = None
 
 
@@ -96,10 +92,8 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация Scraper Service...")
         
-        # Инициализируем репозиторий
         scraper_repository = InMemoryScraperRepository()
         
-        # Инициализируем доменный сервис
         scraper_service = ScraperService(scraper_repository)
         
         logger.info("✅ Scraper Service готов к работе")
@@ -130,7 +124,6 @@ async def health_check():
         if scraper_service is None:
             return {"status": "unhealthy", "error": "Service not initialized"}
         
-        # Проверяем доступность сервиса
         stats = scraper_service.get_statistics()
         
         return {
@@ -157,7 +150,6 @@ async def create_scraping_job(request: CreateJobRequest):
         
         logger.info(f"Создаем задачу скрапинга для: {request.source_url}")
         
-        # Создаем задачу
         job = await scraper_service.create_scraping_job(
             source_url=request.source_url,
             job_type=request.job_type
@@ -196,7 +188,6 @@ async def execute_scraping_job(job_id: str, background_tasks: BackgroundTasks):
         
         logger.info(f"Выполняем задачу скрапинга: {job_id}")
         
-        # Выполняем задачу
         result = await scraper_service.execute_scraping_job(job_id)
         
         processing_time = time.time() - start_time

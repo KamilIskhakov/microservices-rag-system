@@ -26,7 +26,6 @@ class OptimizedModelRepository(ModelRepository):
         self.models: Dict[str, Model] = {}
         self.loaded_models: Dict[str, Any] = {}  # model_id -> (tokenizer, model)
         
-        # Инициализируем фабрику и стратегии
         self.model_factory = ModelFactoryRegistry.get_factory(factory_name)
         self.threading_manager = ThreadingManager(threading_strategy)
         
@@ -34,7 +33,6 @@ class OptimizedModelRepository(ModelRepository):
     
     def _setup_model_paths(self):
         """Настройка путей к моделям (устаревший метод)"""
-        # Теперь пути настраиваются в фабрике
         pass
     
     def save(self, model: Model) -> Model:
@@ -57,7 +55,6 @@ class OptimizedModelRepository(ModelRepository):
     def delete(self, model_id: str) -> bool:
         """Удалить модель"""
         if model_id in self.models:
-            # Выгружаем модель если она загружена
             if model_id in self.loaded_models:
                 self.unload_model(model_id)
             del self.models[model_id]
@@ -69,26 +66,21 @@ class OptimizedModelRepository(ModelRepository):
         try:
             logger.info(f"Загружаем модель: {model_id}")
             
-            # Проверяем валидность модели
             if not self.model_factory.validate_model(model_id):
                 raise ValueError(f"Модель {model_id} не найдена или недоступна")
             
-            # Получаем конфигурацию модели
             config = self.model_factory.get_model_config(model_id)
             if device == "auto":
                 config["device"] = device
             
-            # Создаем модель через фабрику
             tokenizer, model = await self.threading_manager.execute_task(
                 self.model_factory.create_model,
                 model_id,
                 config
             )
             
-            # Сохраняем загруженную модель
             self.loaded_models[model_id] = (tokenizer, model)
             
-            # Создаем доменную сущность через фабрику
             model_path = self.model_factory.model_paths[model_id]
             model_entity = self.model_factory.create_model_entity(model_id, model.device, model_path)
             self.models[model_id] = model_entity
@@ -104,13 +96,11 @@ class OptimizedModelRepository(ModelRepository):
         """Выгрузить модель из памяти"""
         try:
             if model_id in self.loaded_models:
-                # Очищаем память
                 tokenizer, model = self.loaded_models[model_id]
                 del tokenizer
                 del model
                 del self.loaded_models[model_id]
                 
-                # Обновляем статус модели
                 if model_id in self.models:
                     self.models[model_id].unload()
                 
@@ -129,7 +119,6 @@ class OptimizedModelRepository(ModelRepository):
         try:
             tokenizer, model = self.loaded_models[model_id]
             
-            # Токенизируем входной текст
             inputs = tokenizer(
                 prompt, 
                 return_tensors="pt", 
@@ -138,7 +127,6 @@ class OptimizedModelRepository(ModelRepository):
                 max_length=max_length
             )
             
-            # Генерируем текст
             with torch.no_grad():
                 outputs = model.generate(
                     inputs.input_ids,
@@ -154,7 +142,6 @@ class OptimizedModelRepository(ModelRepository):
                     early_stopping=True
                 )
             
-            # Декодируем результат
             generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
             
             return generated_text
@@ -178,7 +165,6 @@ class OptimizedModelRepository(ModelRepository):
     def optimize_memory(self) -> None:
         """Оптимизировать использование памяти"""
         try:
-            # Принудительная сборка мусора
             import gc
             gc.collect()
             

@@ -12,13 +12,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-# Добавляем путь к доменной логике
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Импорты доменной логики
 from domain.services.gateway_service import GatewayService
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -27,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="API Gateway Service", version="2.0.0")
 
-# Глобальные переменные
 gateway_service: Optional[GatewayService] = None
 
 
@@ -60,7 +56,6 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация API Gateway Service...")
         
-        # Инициализируем доменный сервис
         gateway_service = GatewayService()
         
         logger.info("✅ API Gateway Service готов к работе")
@@ -91,10 +86,8 @@ async def health_check():
         if gateway_service is None:
             return {"status": "unhealthy", "error": "Service not initialized"}
         
-        # Проверяем здоровье всех сервисов
         services_health = await gateway_service.check_all_services_health()
         
-        # Определяем общий статус
         all_healthy = all(
             health.get("status") == "healthy" 
             for health in services_health.values()
@@ -163,7 +156,6 @@ async def route_request(request: Request, path: str):
         
         start_time = time.time()
         
-        # Получаем данные запроса
         method = request.method
         headers = dict(request.headers)
         body = None
@@ -174,13 +166,11 @@ async def route_request(request: Request, path: str):
             except:
                 body = {}
         
-        # Извлекаем user_id и session_id из заголовков
         user_id = headers.get("X-User-ID")
         session_id = headers.get("X-Session-ID")
         
         logger.info(f"Маршрутизируем запрос {method} /{path}")
         
-        # Маршрутизируем запрос
         result = await gateway_service.route_request(
             method=method,
             path=f"/{path}",
@@ -227,7 +217,6 @@ async def get_statistics():
         if gateway_service is None:
             raise HTTPException(status_code=503, detail="Service not initialized")
         
-        # Получаем информацию о сервисах
         services = gateway_service.get_all_services_info()
         
         available_services = sum(1 for s in services.values() if s.is_available)

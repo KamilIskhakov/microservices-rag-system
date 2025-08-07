@@ -1,1 +1,0 @@
-# Persistence for Scraper Service

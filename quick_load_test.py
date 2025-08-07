@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Быстрый тест производительности Vector Store
 Тестирует 100 запросов для быстрой проверки
@@ -11,11 +10,9 @@ import statistics
 from typing import List, Dict, Any
 import logging
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Конфигурация теста
 VECTORSTORE_URL = "http://localhost:8002"
 REQUEST_PROCESSOR_URL = "http://localhost:8004"
 TOTAL_REQUESTS = 100
@@ -101,15 +98,12 @@ class QuickLoadTester:
                 task = self.make_request(session, query, i)
                 tasks.append(task)
             
-            # Выполняем все запросы одновременно
             results = await asyncio.gather(*tasks, return_exceptions=True)
             
-            # Фильтруем исключения
             self.results = [r for r in results if isinstance(r, dict)]
         
         total_time = time.time() - start_time
         
-        # Анализируем результаты
         self.analyze_results(total_time)
     
     def analyze_results(self, total_time: float):
@@ -121,11 +115,9 @@ class QuickLoadTester:
             logger.error("❌ Нет успешных запросов!")
             return
         
-        # Временные метрики
         processing_times = [r["processing_time"] for r in successful_requests]
         response_times = [r.get("response_time", 0) for r in successful_requests]
         
-        # Статистика
         total_requests = len(self.results)
         success_rate = len(successful_requests) / total_requests * 100
         requests_per_second = total_requests / total_time
@@ -153,7 +145,6 @@ class QuickLoadTester:
                 logger.info(f"   Среднее: {statistics.mean(response_times_filtered):.3f} сек")
                 logger.info(f"   Медиана: {statistics.median(response_times_filtered):.3f} сек")
         
-        # Результаты поиска
         total_results = sum(r.get("total_results", 0) for r in successful_requests)
         avg_results = total_results / len(successful_requests) if successful_requests else 0
         logger.info(f"\n🔍 РЕЗУЛЬТАТЫ ПОИСКА:")
