@@ -1,28 +1,31 @@
 FROM python:3.11-slim
 
-WORKDIR /app
-
-# Установка системных зависимостей
+# Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \
+    build-essential \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Копирование requirements
-COPY services/request-processor/requirements.txt .
+# Устанавливаем рабочую директорию
+WORKDIR /app
 
-# Установка Python зависимостей
+# Копируем requirements и устанавливаем зависимости
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование исходного кода
-COPY services/request-processor/ .
-COPY src/ ./src/
+# Копируем код сервиса
+COPY . .
 
-# Создание пользователя для безопасности
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
+# Создаем необходимые директории
+RUN mkdir -p /app/logs /app/data
 
-# Открытие порта
+# Устанавливаем переменные окружения
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Открываем порт
 EXPOSE 8004
 
-# Запуск приложения
-CMD ["uvicorn", "request_processor_service:app", "--host", "0.0.0.0", "--port", "8004"] 
+# Запускаем сервис
+CMD ["python", "api/main.py"] 

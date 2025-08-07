@@ -10,8 +10,7 @@ class ExtremistCheckerPopup {
     this.usageFill = document.getElementById('usageFill');
     this.upgradeBtn = document.getElementById('upgradeBtn');
     this.premiumBtn = document.getElementById('premiumBtn');
-    
-    // Инициализируем сервисы
+
     this.limitsService = new LimitsService();
     this.paymentService = new PaymentService();
     
@@ -19,38 +18,27 @@ class ExtremistCheckerPopup {
   }
 
   init() {
-    // Загружаем сохранённый запрос из поисковой строки
     this.loadSavedQuery();
-    
-    // Загружаем информацию о лимитах
     this.loadLimitsInfo();
-    
-    // Добавляем обработчики событий
     this.checkButton.addEventListener('click', () => this.checkContent());
     this.upgradeBtn.addEventListener('click', () => this.showUpgradeModal());
     this.premiumBtn.addEventListener('click', () => this.showUpgradeModal());
-    
-    // Проверяем при нажатии Enter в текстовом поле
     this.queryInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && e.ctrlKey) {
         this.checkContent();
       }
     });
-
-    // Автофокус на поле ввода
     this.queryInput.focus();
   }
 
   loadSavedQuery() {
-    // Пытаемся получить текущий запрос с активной вкладки
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       chrome.scripting.executeScript({
         target: {tabId: tabs[0].id},
         function: () => {
-          // Попытка извлечь поисковый запрос с текущей страницы
           const searchInputs = [
-            'input[name="q"]',  // Google, Bing, DuckDuckGo
-            'input[name="text"]', // Yandex
+            'input[name="q"]', 
+            'input[name="text"]', 
             'input[type="search"]'
           ];
           
@@ -69,8 +57,6 @@ class ExtremistCheckerPopup {
         }
       });
     });
-
-    // Также проверяем сохранённый запрос в хранилище
     chrome.storage.session.get('query', (data) => {
       if (data.query && !this.queryInput.value) {
         this.queryInput.value = data.query;
@@ -89,8 +75,6 @@ class ExtremistCheckerPopup {
     if (this.isChecking) {
       return;
     }
-
-    // Проверяем лимиты
     const canMakeRequest = await this.limitsService.canMakeRequest();
     if (!canMakeRequest) {
       this.showUpgradePrompt();
@@ -98,11 +82,7 @@ class ExtremistCheckerPopup {
     }
 
     this.isChecking = true;
-    
-    // Сохраняем запрос
     chrome.storage.session.set({ query: query });
-    
-    // Обновляем UI
     this.checkButton.disabled = true;
     this.checkButton.innerHTML = '<div class="loading-spinner"></div>Проверяем...';
     
@@ -123,8 +103,7 @@ class ExtremistCheckerPopup {
 
       const data = await response.json();
       this.displayResult(data);
-      
-      // Увеличиваем счетчик использованных запросов
+
       await this.limitsService.incrementUsage();
       await this.loadLimitsInfo();
 
@@ -159,8 +138,6 @@ class ExtremistCheckerPopup {
     const result = data.result;
     let resultClass = 'safe';
     let icon = '✅';
-    
-    // Определяем тип результата на основе ответа
     if (result.toLowerCase().includes('запрещен') || 
         result.toLowerCase().includes('экстремист') ||
         result.toLowerCase().includes('внесен в реестр') ||
@@ -179,7 +156,6 @@ class ExtremistCheckerPopup {
 
     let message = `${icon} ${result}`;
     
-    // Добавляем информацию о материале если он экстремистский
     if (resultClass === 'danger' && data.material_name) {
       message += `\n\n📄 Материал: ${data.material_name}`;
     }
@@ -212,7 +188,6 @@ class ExtremistCheckerPopup {
     this.resultDiv.className = type;
   }
 
-  // Загрузить информацию о лимитах
   async loadLimitsInfo() {
     try {
       const stats = await this.limitsService.getUsageStats();
@@ -230,16 +205,12 @@ class ExtremistCheckerPopup {
         const percentage = stats.percentageUsed;
         this.usageText.textContent = `${stats.usedToday}/${stats.dailyLimit} проверок`;
         this.usageFill.style.width = `${percentage}%`;
-        
-        // Изменяем цвет в зависимости от использования
         this.usageFill.className = 'usage-fill';
         if (percentage > 80) {
           this.usageFill.classList.add('danger');
         } else if (percentage > 60) {
           this.usageFill.classList.add('warning');
         }
-        
-        // Показываем кнопку апгрейда если использовано больше 50%
         if (percentage > 50) {
           this.upgradeBtn.style.display = 'inline-block';
         } else {
@@ -251,8 +222,6 @@ class ExtremistCheckerPopup {
       this.usageText.textContent = 'Ошибка загрузки';
     }
   }
-
-  // Показать промпт для апгрейда
   showUpgradePrompt() {
     this.showResult(
       'Достигнут дневной лимит бесплатных проверок (20).\n\n' +
@@ -261,8 +230,6 @@ class ExtremistCheckerPopup {
     );
     this.upgradeBtn.style.display = 'inline-block';
   }
-
-  // Показать модальное окно апгрейда
   showUpgradeModal() {
     const pricing = this.paymentService.getPricingInfo();
     const modal = document.createElement('div');
@@ -286,8 +253,6 @@ class ExtremistCheckerPopup {
         </div>
       </div>
     `;
-    
-    // Добавляем стили для модального окна
     const style = document.createElement('style');
     style.textContent = `
       .upgrade-modal {
@@ -355,15 +320,12 @@ class ExtremistCheckerPopup {
     document.head.appendChild(style);
     document.body.appendChild(modal);
   }
-
-  // Начать процесс оплаты
   async startPayment() {
     try {
       this.showResult('Создание платежа...', 'loading');
       
       const payment = await this.paymentService.createPayment();
       
-      // Открываем страницу оплаты
       window.open(payment.confirmation.confirmation_url, '_blank');
       
       this.showResult(
@@ -382,12 +344,10 @@ class ExtremistCheckerPopup {
   }
 }
 
-// Инициализируем popup при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
   window.extremistChecker = new ExtremistCheckerPopup();
 });
 
-// Инициализируем popup при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
   new ExtremistCheckerPopup();
 });

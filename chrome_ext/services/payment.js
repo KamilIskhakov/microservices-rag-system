@@ -1,12 +1,11 @@
 class PaymentService {
   constructor() {
-    this.yookassaShopId = 'your_shop_id'; // Замените на ваш Shop ID
-    this.yookassaSecretKey = 'your_secret_key'; // Замените на ваш Secret Key
+    this.yookassaShopId = 'your_shop_id'; 
+    this.yookassaSecretKey = 'your_secret_key'; 
     this.paymentUrl = 'https://api.yookassa.ru/v3/payments';
-    this.premiumPrice = 299; // 299 рублей в месяц
+    this.premiumPrice = 299; 
   }
 
-  // Создать платеж в ЮKassa
   async createPayment() {
     try {
       const paymentData = {
@@ -48,7 +47,6 @@ class PaymentService {
     }
   }
 
-  // Проверить статус платежа
   async checkPaymentStatus(paymentId) {
     try {
       const response = await fetch(`${this.paymentUrl}/${paymentId}`, {
@@ -70,17 +68,14 @@ class PaymentService {
     }
   }
 
-  // Обработать успешный платеж
   async handleSuccessfulPayment(paymentId) {
     try {
       const status = await this.checkPaymentStatus(paymentId);
       
       if (status === 'succeeded') {
-        // Устанавливаем премиум статус
         const limitsService = new LimitsService();
         await limitsService.setPremiumStatus(true);
         
-        // Сохраняем информацию о подписке
         await this.saveSubscriptionInfo(paymentId);
         
         return true;
@@ -93,12 +88,11 @@ class PaymentService {
     }
   }
 
-  // Сохранить информацию о подписке
   async saveSubscriptionInfo(paymentId) {
     const subscriptionInfo = {
       paymentId: paymentId,
       startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // +30 дней
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       status: 'active'
     };
 
@@ -111,7 +105,6 @@ class PaymentService {
     });
   }
 
-  // Проверить активность подписки
   async checkSubscriptionStatus() {
     return new Promise((resolve) => {
       chrome.storage.local.get(['extremist_checker_subscription'], (result) => {
@@ -135,7 +128,6 @@ class PaymentService {
     });
   }
 
-  // Получить уникальный ID пользователя
   async getUserId() {
     return new Promise((resolve) => {
       chrome.storage.local.get(['extremist_checker_user_id'], (result) => {
@@ -151,17 +143,14 @@ class PaymentService {
     });
   }
 
-  // Генерировать уникальный ID пользователя
   generateUserId() {
     return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
-  // Генерировать ключ идемпотентности
   generateIdempotenceKey() {
     return 'payment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
-  // Получить информацию о ценах
   getPricingInfo() {
     return {
       monthly: {
@@ -178,5 +167,4 @@ class PaymentService {
   }
 }
 
-// Экспортируем для использования в других файлах
 window.PaymentService = PaymentService; 

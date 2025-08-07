@@ -1,32 +1,31 @@
 FROM python:3.11-slim
 
-WORKDIR /app
-
-# Установка системных зависимостей
+# Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \
+    build-essential \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Копирование requirements
-COPY services/scraper/requirements.txt .
+# Устанавливаем рабочую директорию
+WORKDIR /app
 
-# Установка Python зависимостей
+# Копируем requirements и устанавливаем зависимости
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование исходного кода
-COPY services/scraper/ .
-COPY src/ ./src/
+# Копируем код сервиса
+COPY . .
 
-# Создание пользователя для безопасности
-RUN useradd -m -u 1000 appuser
+# Создаем необходимые директории
+RUN mkdir -p /app/logs /app/data
 
-# Создание директории data и установка прав
-RUN mkdir -p /app/data && chown -R appuser:appuser /app
+# Устанавливаем переменные окружения
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-USER appuser
-
-# Открытие порта
+# Открываем порт
 EXPOSE 8001
 
-# Запуск приложения
-CMD ["uvicorn", "scraper_service:app", "--host", "0.0.0.0", "--port", "8001"] 
+# Запускаем сервис
+CMD ["python", "api/main.py"] 

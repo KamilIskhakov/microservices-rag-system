@@ -21,11 +21,11 @@ services:
           memory: 512M
           cpus: '0.5'
 
-  # Оптимизированный AI Model API
-  ai-model-optimized:
+  # Оптимизированный AI Model Service (новый)
+  ai-model:
     build:
-      context: ../..
-      dockerfile: infrastructure/docker/services/Dockerfile.ai-model-optimized
+      context: ../../services/ai-model
+      dockerfile: Dockerfile
     container_name: rag_ai_model_optimized
     environment:
       - PYTHONPATH=/app
@@ -39,9 +39,9 @@ services:
       - CPU_THREADS=4
       - GPU_MEMORY_FRACTION=0.8
       # Конфигурация сервисов
-      - AI_MODEL_URL=http://ai-model-optimized:8003
+      - AI_MODEL_URL=http://ai-model:8003
       - VECTORSTORE_URL=http://vectorstore:8002
-      - REQUEST_PROCESSOR_URL=http://request-processor-optimized:8004
+      - REQUEST_PROCESSOR_URL=http://request-processor:8004
       # Конфигурация производительности
       - MAX_GENERATION_TIME=30
       - MAX_WORKERS=8
@@ -58,8 +58,6 @@ services:
       - METRICS_PORT=9090
     volumes:
       - ../../models:/app/models
-      - ../../services/ai-model:/app/services/ai-model
-      - ../../src:/app/src
       - ../../logs:/app/logs
       - ai_model_data:/app/data
       - model_cache:/app/model_cache
@@ -67,13 +65,6 @@ services:
       - "8003:8003"
     depends_on:
       - redis
-    # Временно отключаем healthcheck для загрузки модели
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
-    #   interval: 120s
-    #   timeout: 60s
-    #   retries: 5
-    #   start_period: 600s
     deploy:
       resources:
         limits:
@@ -88,8 +79,8 @@ services:
   # Scraper Service
   scraper:
     build:
-      context: ../..
-      dockerfile: services/scraper/Dockerfile
+      context: ../../services/scraper
+      dockerfile: Dockerfile
     container_name: rag_scraper_optimized
     environment:
       - PYTHONPATH=/app
@@ -107,9 +98,6 @@ services:
       - SCRAPER_URL=http://scraper-optimized:8001
       - PAYMENT_URL=http://payment-optimized:8005
     volumes:
-      - ../../services/scraper:/app
-      - ../../src:/app/src
-      - ../../logs:/app/logs
       - scraper_data:/app/data
     ports:
       - "8001:8001"
@@ -129,21 +117,19 @@ services:
   # Request Processor Service
   request-processor:
     build:
-      context: ../..
-      dockerfile: services/request-processor/Dockerfile
+      context: ../../services/request-processor
+      dockerfile: Dockerfile
     container_name: rag_request_processor_optimized
     environment:
       - PYTHONPATH=/app
       - REDIS_URL=redis://redis:6379
     volumes:
-      - ../../services/request-processor:/app
-      - ../../src:/app/src
-      - ../../logs:/app/logs
+      - request_processor_data:/app/data
     ports:
       - "8004:8004"
     depends_on:
       - redis
-      - ai-model-optimized
+      - ai-model
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
       interval: 30s
@@ -158,8 +144,8 @@ services:
   # Payment Service
   payment:
     build:
-      context: ../..
-      dockerfile: services/payment/Dockerfile
+      context: ../../services/payment
+      dockerfile: Dockerfile
     container_name: rag_payment_optimized
     environment:
       - PYTHONPATH=/app
@@ -167,9 +153,7 @@ services:
       - YOOKASSA_SHOP_ID=${YOOKASSA_SHOP_ID}
       - YOOKASSA_SECRET_KEY=${YOOKASSA_SECRET_KEY}
     volumes:
-      - ../../services/payment:/app
-      - ../../src:/app/src
-      - ../../logs:/app/logs
+      - payment_data:/app/data
     ports:
       - "8005:8005"
     depends_on:
@@ -188,8 +172,8 @@ services:
   # Vector Store Service
   vectorstore:
     build:
-      context: ../..
-      dockerfile: services/vectorstore/Dockerfile
+      context: ../../services/vectorstore
+      dockerfile: Dockerfile
     container_name: rag_vectorstore_optimized
     environment:
       - PYTHONPATH=/app
@@ -198,10 +182,7 @@ services:
       - RELEVANCE_THRESHOLD=${RELEVANCE_THRESHOLD:-0.3}
       - TOP_K_RESULTS=${TOP_K_RESULTS:-5}
     volumes:
-      - ../../services/vectorstore:/app
-      - ../../src:/app/src
-      - ../../logs:/app/logs
-      - docker_vectorstore_data:/app/data
+      - vectorstore_data:/app/data
     ports:
       - "8002:8002"
     depends_on:
@@ -220,8 +201,8 @@ services:
   # API Gateway Service
   api-gateway:
     build:
-      context: ../..
-      dockerfile: services/api-gateway/Dockerfile
+      context: ../../services/api-gateway
+      dockerfile: Dockerfile
     container_name: rag_api_gateway_optimized
     environment:
       - PYTHONPATH=/app
@@ -229,14 +210,12 @@ services:
       - API_GATEWAY_HOST=0.0.0.0
       - API_GATEWAY_PORT=8000
     volumes:
-      - ../../services/api-gateway:/app
-      - ../../src:/app/src
-      - ../../logs:/app/logs
+      - api_gateway_data:/app/data
     ports:
       - "8000:8000"
     depends_on:
       - redis
-      - ai-model-optimized
+      - ai-model
       - scraper
       - request-processor
       - payment
@@ -256,5 +235,7 @@ volumes:
   ai_model_data:
   model_cache: 
   vectorstore_data:
-  docker_vectorstore_data:
-  scraper_data: 
+  scraper_data:
+  request_processor_data:
+  payment_data:
+  api_gateway_data: 

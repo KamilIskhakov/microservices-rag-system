@@ -1,4 +1,3 @@
-/* Стили для кнопки проверки экстремистского контента */
 .extremist-check-button {
   background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
   color: white;
@@ -36,7 +35,6 @@
   box-shadow: none;
 }
 
-/* Контейнер для результата */
 .extremist-check-result {
   background: white;
   border: 2px solid #ddd;
@@ -75,19 +73,16 @@
   color: #8b0000;
 }
 
-/* Специфичные стили для Google */
 .extremist-check-container-google {
   margin: 10px 0;
   width: 100%;
 }
 
-/* Специфичные стили для Яндекс */
 .extremist-check-container-yandex {
   margin: 10px 0;
   width: 100%;
 }
 
-/* Анимация загрузки */
 .loading-spinner {
   display: inline-block;
   width: 16px;
@@ -103,14 +98,12 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Иконка щита */
 .shield-icon {
   width: 16px;
   height: 16px;
   display: inline-block;
 }
 
-/* Кнопка ДО поиска */
 .extremist-pre-search-button {
   background: linear-gradient(135deg, #28a745, #20c997);
   color: white;
@@ -134,7 +127,6 @@
   transform: translateY(-1px);
 }
 
-/* Кнопка премиум */
 .extremist-premium-button {
   background: linear-gradient(135deg, #ffd700, #ffed4e);
   color: #333;
@@ -157,7 +149,6 @@
   transform: translateY(-1px);
 }
 
-/* Контейнер кнопок ДО поиска */
 .extremist-pre-search-container {
   display: flex;
   gap: 8px;

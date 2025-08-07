@@ -11,7 +11,6 @@ class ExtremistContentChecker {
 
   init() {
     console.log('Инициализация ExtremistContentChecker');
-    // Ждем, пока страница полностью загрузится
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setupInterface());
     } else {
@@ -114,20 +113,14 @@ class ExtremistContentChecker {
 
   insertElements() {
     console.log('Попытка вставки элементов для поисковика:', this.searchEngine);
-    
-    // Проверяем, не вставлены ли уже кнопки
+
     if (document.querySelector('.extremist-check-button')) {
       console.log('Кнопки уже существуют, пропускаем вставку');
       return;
     }
     
-    // Вставляем кнопку ДО поисковой строки
     this.insertPreSearchButton();
-    
-    // Вставляем кнопку премиум
     this.insertPremiumButton();
-    
-    // Вставляем основную кнопку и результаты
     this.insertMainButton();
   }
 
@@ -149,7 +142,6 @@ class ExtremistContentChecker {
   }
 
   insertPremiumButton() {
-    // Кнопка премиум уже вставлена в insertPreSearchButton
   }
 
   insertMainButton() {
@@ -162,8 +154,6 @@ class ExtremistContentChecker {
       
       container.appendChild(this.checkButton);
       container.appendChild(this.resultContainer);
-      
-      // Вставляем перед результатами поиска
       if (this.searchEngine === 'google') {
         const searchDiv = document.querySelector('#search');
         console.log('Google search div:', searchDiv);
@@ -202,7 +192,6 @@ class ExtremistContentChecker {
   }
 
   attachEventListeners() {
-    // Отслеживаем изменения в поисковой строке
     const searchInput = document.querySelector(this.searchInputSelector);
     if (searchInput) {
       searchInput.addEventListener('input', () => {
@@ -210,7 +199,6 @@ class ExtremistContentChecker {
       });
     }
 
-    // Отслеживаем изменения в DOM для динамически загружаемого контента
     const observer = new MutationObserver(() => {
       if (!document.querySelector('.extremist-check-button')) {
         this.insertElements();
@@ -222,7 +210,6 @@ class ExtremistContentChecker {
       subtree: true
     });
 
-    // Вставляем элементы при первом запуске с несколькими попытками
     setTimeout(() => this.insertElements(), 500);
     setTimeout(() => this.insertElements(), 1500);
     setTimeout(() => this.insertElements(), 3000);
@@ -240,7 +227,7 @@ class ExtremistContentChecker {
       return;
     }
 
-    // Проверяем лимиты (временно отключено для тестирования)
+    // Проверяем лимиты 
     // const canMakeRequest = await this.limitsService.canMakeRequest();
     // if (!canMakeRequest) {
     //   this.showUpgradePrompt();
@@ -278,9 +265,6 @@ class ExtremistContentChecker {
 
       const data = await response.json();
       this.displayResult(data);
-      
-      // Увеличиваем счетчик использованных запросов (временно отключено)
-      // await this.limitsService.incrementUsage();
 
     } catch (error) {
       console.error('Ошибка при проверке:', error);
@@ -317,8 +301,6 @@ class ExtremistContentChecker {
   displayResult(data) {
     const result = data.result;
     let resultClass = 'safe';
-    
-    // Определяем тип результата на основе ответа
     if (result.toLowerCase().includes('запрещен') || 
         result.toLowerCase().includes('экстремист') ||
         result.toLowerCase().includes('внесен в реестр')) {
@@ -348,7 +330,6 @@ class ExtremistContentChecker {
     this.resultContainer.style.display = 'none';
   }
 
-  // Показать промпт для апгрейда
   showUpgradePrompt() {
     this.showResult(
       'Достигнут дневной лимит бесплатных проверок (20).\n\n' +
@@ -395,8 +376,7 @@ class ExtremistContentChecker {
         </div>
       </div>
     `;
-    
-    // Добавляем стили для модального окна
+
     const style = document.createElement('style');
     style.textContent = `
       .extremist-premium-modal {
@@ -466,8 +446,6 @@ class ExtremistContentChecker {
   }
 }
 
-// Инициализируем расширение
 new ExtremistContentChecker();
 
-// Инициализируем расширение
 new ExtremistContentChecker();
