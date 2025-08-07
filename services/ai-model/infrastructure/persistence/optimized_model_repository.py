@@ -13,6 +13,8 @@ import uuid
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from domain.repositories.model_repository import ModelRepository
 from domain.entities.model import Model
+from domain.factories.model_factory import ModelFactoryRegistry
+from domain.strategies.threading_strategy import ThreadingManager
 
 logger = logging.getLogger(__name__)
 
@@ -20,19 +22,20 @@ logger = logging.getLogger(__name__)
 class OptimizedModelRepository(ModelRepository):
     """Оптимизированная реализация репозитория моделей"""
     
-    def __init__(self):
+    def __init__(self, factory_name: str = "optimized", threading_strategy: str = "hybrid"):
         self.models: Dict[str, Model] = {}
         self.loaded_models: Dict[str, Any] = {}  # model_id -> (tokenizer, model)
-        self.model_paths: Dict[str, str] = {}
-        self._setup_model_paths()
+        
+        # Инициализируем фабрику и стратегии
+        self.model_factory = ModelFactoryRegistry.get_factory(factory_name)
+        self.threading_manager = ThreadingManager(threading_strategy)
+        
+        logger.info(f"Инициализирован OptimizedModelRepository с фабрикой {factory_name} и стратегией {threading_strategy}")
     
     def _setup_model_paths(self):
-        """Настройка путей к моделям"""
-        base_path = "/app/models"
-        self.model_paths = {
-            "qwen-model_full": os.path.join(base_path, "qwen-model_full"),
-            # Добавьте другие модели по необходимости
-        }
+        """Настройка путей к моделям (устаревший метод)"""
+        # Теперь пути настраиваются в фабрике
+        pass
     
     def save(self, model: Model) -> Model:
         """Сохранить модель"""
@@ -62,50 +65,35 @@ class OptimizedModelRepository(ModelRepository):
         return False
     
     def load_model(self, model_id: str, device: str = "auto") -> Model:
-        """Загрузить модель в память"""
+        """Загрузить модель в память с использованием фабрики"""
         try:
             logger.info(f"Загружаем модель: {model_id}")
             
-            # Проверяем доступность модели
-            if model_id not in self.model_paths:
-                raise ValueError(f"Модель {model_id} не найдена в конфигурации")
+            # Проверяем валидность модели
+            if not self.model_factory.validate_model(model_id):
+                raise ValueError(f"Модель {model_id} не найдена или недоступна")
             
-            model_path = self.model_paths[model_id]
-            if not os.path.exists(model_path):
-                raise ValueError(f"Путь к модели не существует: {model_path}")
-            
-            # Определяем устройство
+            # Получаем конфигурацию модели
+            config = self.model_factory.get_model_config(model_id)
             if device == "auto":
-                device = "cuda" if torch.cuda.is_available() else "cpu"
+                config["device"] = device
             
-            # Загружаем токенизатор и модель
-            tokenizer = AutoTokenizer.from_pretrained(model_path)
-            model = AutoModelForCausalLM.from_pretrained(
-                model_path, 
-                torch_dtype=torch.float32,
-                device_map=device
+            # Создаем модель через фабрику
+            tokenizer, model = await self.threading_manager.execute_task(
+                self.model_factory.create_model,
+                model_id,
+                config
             )
             
             # Сохраняем загруженную модель
             self.loaded_models[model_id] = (tokenizer, model)
             
-            # Создаем или обновляем запись модели
-            if model_id not in self.models:
-                model_entity = Model(
-                    id=model_id,
-                    name=model_id,
-                    type="causal_lm",
-                    device=device,
-                    is_loaded=True,
-                    path=model_path,
-                    created_at=datetime.now(),
-                    updated_at=datetime.now()
-                )
-                self.models[model_id] = model_entity
-            else:
-                self.models[model_id].load()
+            # Создаем доменную сущность через фабрику
+            model_path = self.model_factory.model_paths[model_id]
+            model_entity = self.model_factory.create_model_entity(model_id, model.device, model_path)
+            self.models[model_id] = model_entity
             
-            logger.info(f"Модель {model_id} успешно загружена на {device}")
+            logger.info(f"Модель {model_id} успешно загружена на {model.device}")
             return self.models[model_id]
             
         except Exception as e:

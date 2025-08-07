@@ -62,17 +62,33 @@ class VectorService:
         # Сохраняем документы
         return self.vector_repository.add_documents(vector_documents)
     
-    def search_similar(self, query: str, top_k: int = 5, threshold: float = 0.3) -> List[SearchResult]:
+    async def search_similar(self, query: str, top_k: int = 5, threshold: float = 0.3) -> List[SearchResult]:
         """Поиск похожих документов"""
-        # Генерируем эмбеддинг для запроса
-        query_embedding = self._get_embedding_model().encode(query)
+        import logging
+        logger = logging.getLogger(__name__)
         
-        # Ищем похожие документы
-        return self.vector_repository.search_similar(
-            query_embedding=query_embedding.tolist(),
-            top_k=top_k,
-            threshold=threshold
-        )
+        try:
+            logger.info(f"VectorService: generating embedding for query: {query[:50]}...")
+            
+            # Генерируем эмбеддинг для запроса
+            query_embedding = self._get_embedding_model().encode(query)
+            logger.info(f"VectorService: embedding generated, length: {len(query_embedding)}")
+            
+            # Ищем похожие документы
+            logger.info(f"VectorService: calling repository.search_similar with top_k={top_k}, threshold={threshold}")
+            
+            results = await self.vector_repository.search_similar(
+                query_embedding=query_embedding.tolist(),
+                top_k=top_k,
+                threshold=threshold
+            )
+            
+            logger.info(f"VectorService: search completed, found {len(results)} results")
+            return results
+            
+        except Exception as e:
+            logger.error(f"VectorService: error in search_similar: {e}")
+            raise
     
     def get_document(self, document_id: str) -> Optional[VectorDocument]:
         """Получить документ по ID"""
@@ -104,9 +120,9 @@ class VectorService:
         """Получить все документы"""
         return self.vector_repository.get_all_documents()
     
-    def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> Dict[str, Any]:
         """Получить статистику"""
-        return self.vector_repository.get_statistics()
+        return await self.vector_repository.get_statistics()
     
     def clear_index(self) -> bool:
         """Очистить индекс"""

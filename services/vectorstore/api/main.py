@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Импорты доменной логики
 from domain.services.vector_service import VectorService
-from infrastructure.persistence.faiss_repository import FAISSRepository
+from infrastructure.persistence.optimized_faiss_repository import OptimizedFAISSRepository
 
 # Настройка логирования
 logging.basicConfig(
@@ -87,7 +87,7 @@ async def startup_event():
         logger.info("🚀 Инициализация Vector Store Service...")
         
         # Инициализируем репозиторий
-        vector_repository = FAISSRepository(model_name=MODEL_NAME)
+        vector_repository = OptimizedFAISSRepository(model_name=MODEL_NAME)
         
         # Инициализируем доменный сервис
         vector_service = VectorService(vector_repository, MODEL_NAME)
@@ -107,14 +107,14 @@ async def health_check():
             return {"status": "unhealthy", "error": "Service not initialized"}
         
         # Проверяем доступность сервиса
-        stats = vector_service.get_statistics()
+        stats = await vector_service.get_statistics()
         
         return {
             "status": "healthy",
             "service": "vectorstore",
             "timestamp": datetime.now().isoformat(),
-            "total_documents": stats["total_documents"],
-            "indexed_documents": stats["indexed_documents"]
+            "total_documents": stats.get("total_documents", 0),
+            "indexed_documents": stats.get("index_size", 0)
         }
         
     except Exception as e:
@@ -202,7 +202,7 @@ async def search_documents(request: SearchRequest):
         logger.info(f"Поиск: {request.query[:50]}...")
         
         # Выполняем поиск
-        results = vector_service.search_similar(
+        results = await vector_service.search_similar(
             query=request.query,
             top_k=request.top_k,
             threshold=request.threshold
@@ -210,14 +210,23 @@ async def search_documents(request: SearchRequest):
         
         # Преобразуем результаты в словари
         results_data = []
-        for result in results:
-            results_data.append({
-                "document_id": result.document_id,
-                "content": result.content,
-                "relevance_score": result.relevance_score,
-                "distance": result.distance,
-                "metadata": result.metadata
-            })
+        logger.info(f"Преобразуем {len(results)} результатов поиска")
+        
+        for i, result in enumerate(results):
+            try:
+                result_dict = {
+                    "document_id": result.document_id,
+                    "content": result.content,
+                    "relevance_score": result.relevance_score,
+                    "distance": result.distance,
+                    "metadata": result.metadata
+                }
+                results_data.append(result_dict)
+            except Exception as e:
+                logger.error(f"Ошибка преобразования результата {i}: {e}")
+                logger.error(f"Тип результата: {type(result)}")
+                logger.error(f"Атрибуты результата: {dir(result)}")
+                raise
         
         processing_time = time.time() - start_time
         
