@@ -29,4 +29,4 @@ EXPOSE 8003
 
 # Запускаем сервис через uvicorn с несколькими воркерами
 ENV UVICORN_WORKERS=2
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8003", "--workers", "${UVICORN_WORKERS}"]
+CMD ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port 8003 --workers ${UVICORN_WORKERS:-2}"]
