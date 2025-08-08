@@ -27,6 +27,7 @@ app = FastAPI(title="Vector Store Service", version="2.0.0")
 vector_service: Optional[VectorService] = None
 
 MODEL_NAME = os.getenv("VECTOR_STORE_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+INDEX_TYPE = os.getenv("VECTOR_INDEX_TYPE", "IndexFlatIP")
 RELEVANCE_THRESHOLD = float(os.getenv("RELEVANCE_THRESHOLD", "0.3"))
 TOP_K_RESULTS = int(os.getenv("TOP_K_RESULTS", "5"))
 
@@ -81,7 +82,7 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация Vector Store Service...")
         
-        vector_repository = OptimizedFAISSRepository(model_name=MODEL_NAME)
+        vector_repository = OptimizedFAISSRepository(model_name=MODEL_NAME, index_type=INDEX_TYPE)
         
         vector_service = VectorService(vector_repository, MODEL_NAME)
         

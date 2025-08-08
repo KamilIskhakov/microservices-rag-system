@@ -26,7 +26,7 @@ class OptimizedFAISSRepository(VectorRepository):
     
     def __init__(self, 
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-                 index_type: str = "IndexIVFFlat",
+                 index_type: str = "IndexFlatIP",
                  nlist: int = 100,
                  nprobe: int = 10,
                  cache_ttl: int = 3600):
