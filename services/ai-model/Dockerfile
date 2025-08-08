@@ -27,5 +27,6 @@ ENV PYTHONUNBUFFERED=1
 # Открываем порт
 EXPOSE 8003
 
-# Запускаем сервис
-CMD ["python", "api/main.py"]
+# Запускаем сервис через uvicorn с несколькими воркерами
+ENV UVICORN_WORKERS=2
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8003", "--workers", "${UVICORN_WORKERS}"]

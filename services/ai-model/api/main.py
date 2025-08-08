@@ -90,6 +90,12 @@ async def startup_event():
     try:
         logger.info("🚀 Инициализация AI Model Service...")
         
+        cpu_threads = int(os.getenv("CPU_THREADS", str(os.cpu_count() or 1)))
+        try:
+            torch.set_num_threads(cpu_threads)
+        except Exception:
+            pass
+
         model_repository = OptimizedModelRepository()
         
         model_service = ModelService(model_repository)
@@ -177,7 +183,7 @@ async def load_model(model_id: str = "qwen-model_full", device: str = "auto"):
             raise HTTPException(status_code=503, detail="Service not initialized")
         
         logger.info(f"Загружаем модель: {model_id}")
-        model = model_service.load_model(model_id, device)
+        model = await model_service.load_model(model_id, device)
         
         return {
             "success": True,
@@ -229,7 +235,7 @@ async def generate_response(request: ModelRequest):
             model_id=request.model_id
         )
         
-        response = generate_text_use_case.execute(use_case_request)
+        response = await generate_text_use_case.execute(use_case_request)
         
         memory_usage = model_service.get_memory_usage() if model_service else None
         

@@ -12,9 +12,9 @@ class ModelService:
     def __init__(self, model_repository: ModelRepository):
         self.model_repository = model_repository
     
-    def load_model(self, model_id: str, device: str = "auto") -> Model:
+    async def load_model(self, model_id: str, device: str = "auto") -> Model:
         """Загрузить модель"""
-        model = self.model_repository.load_model(model_id, device)
+        model = await self.model_repository.load_model(model_id, device)
         return model
     
     def unload_model(self, model_id: str) -> bool:
@@ -42,9 +42,9 @@ class ModelService:
         model = self.model_repository.find_by_id(model_id)
         return model is not None and model.is_available()
     
-    def generate_text(self, model_id: str, prompt: str, max_length: int = 512, temperature: float = 0.7) -> str:
+    async def generate_text(self, model_id: str, prompt: str, max_length: int = 512, temperature: float = 0.7) -> str:
         """Генерировать текст с помощью модели"""
         if not self.is_model_available(model_id):
             raise ValueError(f"Модель {model_id} недоступна")
         
-        return self.model_repository.generate_text(model_id, prompt, max_length, temperature)
+        return await self.model_repository.generate_text(model_id, prompt, max_length, temperature)

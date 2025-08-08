@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class OptimizedModelRepository(ModelRepository):
     """Оптимизированная реализация репозитория моделей"""
     
-    def __init__(self, factory_name: str = "optimized", threading_strategy: str = "hybrid"):
+    def __init__(self, factory_name: str = "optimized", threading_strategy: str = "async"):
         self.models: Dict[str, Model] = {}
         self.loaded_models: Dict[str, Any] = {}  # model_id -> (tokenizer, model)
         
@@ -61,7 +61,7 @@ class OptimizedModelRepository(ModelRepository):
             return True
         return False
     
-    def load_model(self, model_id: str, device: str = "auto") -> Model:
+    async def load_model(self, model_id: str, device: str = "auto") -> Model:
         """Загрузить модель в память с использованием фабрики"""
         try:
             logger.info(f"Загружаем модель: {model_id}")
@@ -111,7 +111,7 @@ class OptimizedModelRepository(ModelRepository):
             logger.error(f"Ошибка выгрузки модели {model_id}: {e}")
             return False
     
-    def generate_text(self, model_id: str, prompt: str, max_length: int = 512, temperature: float = 0.7) -> str:
+    def _generate_text_sync(self, model_id: str, prompt: str, max_length: int = 512, temperature: float = 0.7) -> str:
         """Генерировать текст с помощью модели"""
         if model_id not in self.loaded_models:
             raise ValueError(f"Модель {model_id} не загружена")
@@ -150,6 +150,15 @@ class OptimizedModelRepository(ModelRepository):
             logger.error(f"Ошибка генерации текста: {e}")
             raise
     
+    async def generate_text(self, model_id: str, prompt: str, max_length: int = 512, temperature: float = 0.7) -> str:
+        return await self.threading_manager.execute_task(
+            self._generate_text_sync,
+            model_id,
+            prompt,
+            max_length,
+            temperature
+        )
+
     def get_memory_usage(self) -> Dict[str, Any]:
         """Получить информацию об использовании памяти"""
         process = psutil.Process()

@@ -32,18 +32,18 @@ class GenerateTextUseCase:
     def __init__(self, model_service: ModelService):
         self.model_service = model_service
     
-    def execute(self, request: GenerateTextRequest) -> GenerateTextResponse:
+    async def execute(self, request: GenerateTextRequest) -> GenerateTextResponse:
         """Выполнить генерацию текста"""
         import time
         start_time = time.time()
         
         try:
             if not self.model_service.is_model_available(request.model_id):
-                self.model_service.load_model(request.model_id)
+                await self.model_service.load_model(request.model_id)
             
             prompt = self._build_prompt(request.query, request.context or [])
             
-            result = self.model_service.generate_text(
+            result = await self.model_service.generate_text(
                 model_id=request.model_id,
                 prompt=prompt,
                 max_length=request.max_length,
